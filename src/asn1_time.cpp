@@ -7,28 +7,37 @@
 #include "cppossl/error.hpp"
 
 namespace ossl {
+namespace asn1_time {
 
-asn1_time_t make_asn1_time_now()
-{
-    return make_asn1_time(std::chrono::seconds::zero());
-}
+    asn1_time_t now()
+    {
+        return offset(std::chrono::seconds::zero());
+    }
 
-asn1_time_t make_asn1_time(std::chrono::seconds const& from_now)
-{
-    asn1_time_t obj { ASN1_TIME_new() };
-    if (obj == nullptr)
-        CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate new OpenSSL ASN1_TIME object."); // LCOV_EXCL_LINE
+    asn1_time_t offset(std::chrono::seconds const& from_now)
+    {
+        auto t = asn1_time_t::make();
+        set_offset(t.get(), from_now);
+        return t;
+    } // LCOV_EXCL_LINE
 
-    if (X509_time_adj_ex(obj.get(), 0, from_now.count(), nullptr) == 0)
-        CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to build X509_REVOKED revocation date."); // LCOV_EXCL_LINE
+    asn1_time_t from_unix(time_t const& unixts)
+    {
+        time_t const now = time(nullptr);
+        return offset(std::chrono::seconds(now - unixts));
+    }
 
-    return obj;
-} // LCOV_EXCL_LINE
+    void set_offset(::ASN1_TIME* t, std::chrono::seconds const& from_now)
+    {
+        if (X509_time_adj_ex(t, 0, from_now.count(), nullptr) == 0)
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to update ASN1_TIME."); // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 
-asn1_time_t make_asn1_time(time_t const& unixts)
-{
-    time_t const now = time(nullptr);
-    return make_asn1_time(std::chrono::seconds(now - unixts));
-}
+    void set_unix(::ASN1_TIME* t, time_t const& unixts)
+    {
+        time_t const now = time(nullptr);
+        set_offset(t, std::chrono::seconds(now - unixts));
+    }
 
+} // namespace asn1_time
 } // namespace ossl
