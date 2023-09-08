@@ -16,49 +16,65 @@ using namespace ossl;
 
 using Catch::Matchers::ContainsSubstring;
 
-TEST_CASE("Load Private Key", "[pkey]")
+TEST_CASE("evp_pkey_t - PEM", "[evp_pkey]")
 {
     auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
 
-    SECTION("Valid PEM String")
+    SECTION("Load Valid PEM")
     {
         evp_pkey_t key;
-        REQUIRE_NOTHROW(key = pem::loader<evp_pkey_t>::load(testpemstr));
+        REQUIRE_NOTHROW(key = pem::load<evp_pkey_t>(testpemstr));
         REQUIRE(key);
     }
 
-    SECTION("Invalid PEM String")
+    SECTION("Load Invalid PEM")
     {
-        REQUIRE_THROWS_AS(pem::loader<evp_pkey_t>::load(testpemstr.substr(0, 32)), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(testpemstr.substr(0, 32)), openssl_error);
     }
-}
 
-TEST_CASE("Private Key Pemify", "[pkey]")
-{
-    auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
-    evp_pkey_t key = pem::loader<evp_pkey_t>::load(testpemstr);
-    REQUIRE(key);
-
-    SECTION("Passwordless")
+    SECTION("Passwordless PEM")
     {
-        auto const keystr = pem::to_pem_string(key);
-        REQUIRE_THAT(keystr, ContainsSubstring("BEGIN PRIVATE KEY"));
+        evp_pkey_t const orig_key = pem::load<evp_pkey_t>(testpemstr);
+        REQUIRE(orig_key);
 
-        evp_pkey_t load_key;
-        REQUIRE_NOTHROW(load_key = pem::loader<evp_pkey_t>::load(keystr));
-        REQUIRE(equal(key, load_key));
+        auto const pemstr = pem::to_pem_string(orig_key);
+        REQUIRE_THAT(pemstr, ContainsSubstring("BEGIN PRIVATE KEY"));
+
+        evp_pkey_t load_from_pem;
+        REQUIRE_NOTHROW(load_from_pem = pem::load<evp_pkey_t>(pemstr));
+        REQUIRE(equal(orig_key, load_from_pem));
     }
 
     SECTION("Password Protected")
     {
-        std::string const password = "qwertyuiop";
-        auto const keystr = pem::to_pem_string(key, password);
-        REQUIRE_THAT(keystr, ContainsSubstring("BEGIN ENCRYPTED PRIVATE KEY"));
+        evp_pkey_t const orig_key = pem::load<evp_pkey_t>(testpemstr);
+        REQUIRE(orig_key);
 
-        REQUIRE_THROWS_AS(pem::loader<evp_pkey_t>::load(keystr), openssl_error);
+        std::string const password = "qwertyuiop";
+        auto const pemstr = pem::to_pem_string(orig_key, password);
+        REQUIRE_THAT(pemstr, ContainsSubstring("BEGIN ENCRYPTED PRIVATE KEY"));
+
+        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(pemstr), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(pemstr, "bad_password"), openssl_error);
 
         evp_pkey_t load_key;
-        REQUIRE_NOTHROW(load_key = pem::loader<evp_pkey_t>::load(keystr, password));
-        REQUIRE(equal(key, load_key));
+        REQUIRE_NOTHROW(load_key = pem::load<evp_pkey_t>(pemstr, password));
+        REQUIRE(equal(orig_key, load_key));
     }
+}
+
+TEST_CASE("evp_pkey_t - new_ref()", "[evp_pkey]")
+{
+    auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
+
+    evp_pkey_t key;
+    REQUIRE_FALSE(key);
+
+    {
+        auto const innerkey = pem::load<evp_pkey_t>(testpemstr);
+        REQUIRE(innerkey);
+        REQUIRE_NOTHROW(key = new_ref(innerkey));
+    }
+
+    REQUIRE(key);
 }

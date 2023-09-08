@@ -37,7 +37,7 @@ TEST_CASE("Load X.509", "[x509]")
     SECTION("Valid PEM String")
     {
         x509_t x509;
-        REQUIRE_NOTHROW(x509 = pem::loader<x509_t>::load(pemstr));
+        REQUIRE_NOTHROW(x509 = pem::load<x509_t>(pemstr));
         REQUIRE(x509);
 
         REQUIRE(get_not_before(x509) == 1694011572);
@@ -47,6 +47,6 @@ TEST_CASE("Load X.509", "[x509]")
 
     SECTION("Invalid PEM String")
     {
-        REQUIRE_THROWS_AS(pem::loader<x509_t>::load(pemstr.substr(0, 32)), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<x509_t>(pemstr.substr(0, 32)), openssl_error);
     }
 }

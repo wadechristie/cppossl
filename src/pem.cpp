@@ -81,7 +81,8 @@ namespace pem {
                     /*klen=*/passlen,
                     /*cb=*/nullptr,
                     /*u=*/nullptr)
-                == 0) {
+                == 0)
+            {
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to write private key PEM."); // LCOV_EXCL_LINE
             }
         }

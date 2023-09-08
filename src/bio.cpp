@@ -94,7 +94,8 @@ bio_filter bio_filter::encryption(
             cipher,
             /*engine=*/nullptr,
             static_cast<uint8_t const*>(key),
-            static_cast<uint8_t const*>(iv))) {
+            static_cast<uint8_t const*>(iv)))
+    {
         CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to initialize encryption cipher filter BIO."); // LCOV_EXCL_LINE
     }
 
@@ -130,7 +131,8 @@ bio_filter bio_filter::decryption(
             cipher,
             /*engine=*/nullptr,
             static_cast<uint8_t const*>(key),
-            static_cast<uint8_t const*>(iv))) {
+            static_cast<uint8_t const*>(iv)))
+    {
         CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to initialize decryption cipher filter BIO."); // LCOV_EXCL_LINE
     }
 
@@ -173,7 +175,8 @@ int bio::write(void const* data, size_t const& length)
 std::string bio::read_string()
 {
     std::stringstream ss;
-    while (pending()) {
+    while (pending())
+    {
         std::array<char, 256> buffer { 0 };
         int const nread = BIO_read(*this, buffer.data(), buffer.size());
         if (nread <= 0)
