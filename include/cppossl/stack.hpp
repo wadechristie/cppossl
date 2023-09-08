@@ -4,6 +4,8 @@
 //
 #pragma once
 
+#include <openssl/stack.h>
+
 #include <cppossl/raii.hpp>
 
 namespace ossl {
@@ -13,17 +15,44 @@ namespace ossl {
  */
 /**@{*/
 
-/** @brief Push a distribution point object onto the stack. */
-void push(dist_point_sk_t const& dpoints, dist_point_t dpoint);
+namespace stack {
 
-/** @brief Push a general name object onto the stack. */
-void push(general_name_sk_t const& names, general_name_t name);
+    template <typename StackT>
+    size_t size(StackT const& sk)
+    {
+        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
 
-/** @brief Push a X.509 extension object onto the stack. */
-void push(x509_extension_sk_t const& exts, x509_extension_t name);
+        return OPENSSL_sk_num(reinterpret_cast<OPENSSL_STACK*>(sk.get()));
+    }
 
-/** @brief Push a X.509 CRL object onto the stack. */
-void push(x509_crl_sk_t const& crls, x509_crl_t crl);
+    template <typename StackT>
+    bool empty(StackT const& sk)
+    {
+        return size(sk) == 0;
+    }
+
+    template <typename StackT>
+    void push(StackT const& sk, raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> elem)
+    {
+        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
+
+        if (!OPENSSL_sk_push(reinterpret_cast<OPENSSL_STACK*>(sk.get()), elem.get()))
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to push element onto stack."); // LCOV_EXCL_LINE
+        elem.release();
+    }
+
+    template <typename StackT>
+    raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> pop(StackT const& sk)
+    {
+        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
+
+        return raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> {
+            reinterpret_cast<typename raii::traits<typename StackT::type>::elem_type*>(
+                OPENSSL_sk_pop(reinterpret_cast<OPENSSL_STACK*>(sk.get())))
+        };
+    }
+
+} // namespace stack
 
 /**@}*/
 

@@ -76,7 +76,6 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/general_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/stack.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_req.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_store.cpp
