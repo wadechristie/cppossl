@@ -12,6 +12,25 @@
 namespace ossl {
 namespace pem {
 
+    static constexpr std::string_view pem_begin_line_prefix = "-----BEGIN ";
+    static constexpr std::string_view pem_end_line_prefix = "-----END ";
+    static constexpr std::string_view pem_line_suffix = "-----";
+
+    static constexpr std::string_view encrypted_pkey_begin_line = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
+    static constexpr std::string_view encrypted_pkey_end_line = "-----END ENCRYPTED PRIVATE KEY-----";
+
+    static constexpr std::string_view pkey_begin_line = "-----BEGIN PRIVATE KEY-----";
+    static constexpr std::string_view pkey_end_line = "-----END PRIVATE KEY-----";
+
+    static constexpr std::string_view x509_begin_line = "-----BEGIN CERTIFICATE-----";
+    static constexpr std::string_view x509_end_line = "-----END CERTIFICATE-----";
+
+    static constexpr std::string_view x509_crl_begin_line = "-----BEGIN X509 CRL-----";
+    static constexpr std::string_view x509_crl_end_line = "-----END X509 CRL-----";
+
+    static constexpr std::string_view x509_req_begin_line = "-----BEGIN CERTIFICATE REQUEST-----";
+    static constexpr std::string_view x509_req_end_line = "-----END CERTIFICATE REQUEST-----";
+
     /**
      * \defgroup pem OpenSSL PEM
      */

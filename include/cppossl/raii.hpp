@@ -23,7 +23,7 @@ namespace raii {
     template <typename T>
     struct traits
     {
-        static_assert(sizeof(T) != sizeof(T), "Missing OpenSSL C++ RIAA traits specialization.");
+        static_assert(sizeof(T) != sizeof(T), "Missing CPPOSSL RIAA traits specialization.");
     };
 
     template <typename T>
