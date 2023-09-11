@@ -12,6 +12,11 @@
 namespace ossl {
 namespace pem {
 
+    /**
+     * \defgroup pem OpenSSL PEM
+     */
+    /**@{*/
+
     static constexpr std::string_view pem_begin_line_prefix = "-----BEGIN ";
     static constexpr std::string_view pem_end_line_prefix = "-----END ";
     static constexpr std::string_view pem_line_suffix = "-----";
@@ -30,11 +35,6 @@ namespace pem {
 
     static constexpr std::string_view x509_req_begin_line = "-----BEGIN CERTIFICATE REQUEST-----";
     static constexpr std::string_view x509_req_end_line = "-----END CERTIFICATE REQUEST-----";
-
-    /**
-     * \defgroup pem OpenSSL PEM
-     */
-    /**@{*/
 
     void to_pem(::BIO* bio, ::X509 const* x509);
 

@@ -26,6 +26,7 @@ else()
 endif()
 
 option(CPPOSSL_BuildTests       "Build the unittests."          ${CPPOSSL_BuildTests_INIT})
+option(CPPOSSL_BuildTools       "Build the tools directory."    ON)
 option(CPPOSSL_UseASAN          "Build w/ address sanitizer."   OFF)
 option(CPPOSSL_UseGcov          "Build w/ code coverage."       OFF)
 
@@ -137,4 +138,12 @@ if (CPPOSSL_BuildTests)
     include(Catch)
     enable_testing()
     add_subdirectory(unittest)
+endif()
+
+##
+## Tools
+##
+
+if (CPPOSSL_BuildTools)
+    add_subdirectory(tools)
 endif()
