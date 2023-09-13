@@ -62,11 +62,25 @@ namespace x509 {
         return timegm(&time);
     }
 
-    std::string get_serial_number_hex(roref x509)
+    ossl::owned<::ASN1_INTEGER> get_serial_number(roref x509)
+    {
+        ossl::owned<::ASN1_INTEGER> serial { ASN1_INTEGER_dup(X509_get_serialNumber(const_cast<::X509*>(x509.get()))) };
+        if (serial == nullptr)
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number.");
+        return serial;
+    }
+
+    ossl::owned<::BIGNUM> get_serial_number_bn(roref x509)
     {
         owned<::BIGNUM> bn { ASN1_INTEGER_to_BN(X509_get_serialNumber(const_cast<::X509*>(x509.get())), nullptr) };
         if (bn == nullptr)
-            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL BIGNUM object."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number as OpenSSL BIGNUM."); // LCOV_EXCL_LINE
+        return bn;
+    }
+
+    std::string get_serial_number_hex(roref x509)
+    {
+        auto const bn = get_serial_number_bn(x509);
         owned<char> const hex { BN_bn2hex(bn.get()) };
         if (hex == nullptr)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to convert OpenSSL BIGNUM object to hex."); // LCOV_EXCL_LINE

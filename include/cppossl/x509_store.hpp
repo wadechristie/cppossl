@@ -9,59 +9,27 @@
 #include <cppossl/x509_crl.hpp>
 
 namespace ossl {
+namespace x509_store {
 
-/**
- * \defgroup x509_store OpenSSL X509_STORE
- */
-/**@{*/
+    /**
+     * \defgroup x509_store OpenSSL X509_STORE
+     */
+    /**@{*/
 
-/** @brief C++ utility wrapper around `x509_store_ptr`. */
-class x509_store
-{
-public:
     using roref = raii::roref<::X509_STORE>;
     using rwref = raii::rwref<::X509_STORE>;
 
-    /** @brief Retrieve a new reference to the given OpenSSL X509_STORE object. */
-    static owned<::X509_STORE> retain(roref store);
+    owned<::X509_STORE> retain(roref store);
 
-    x509_store();
+    void set_flags(rwref store, int flags);
 
-    template <typename IterT>
-    x509_store(IterT first, IterT last)
-        : x509_store()
-    {
-        for (auto it = first; it != last; ++it)
-            add(*it);
-    }
+    void set_depth(rwref store, int depth);
 
-    explicit x509_store(int flags);
+    void add(rwref store, x509::roref cert);
 
-    x509_store(x509_store&&) = default;
-    x509_store& operator=(x509_store&&) = default;
+    void add(rwref store, x509_crl::roref crl);
 
-    x509_store(x509_store const&);
-    x509_store& operator=(x509_store const&);
+    /**@}*/
 
-    ~x509_store() = default;
-
-    x509_store& set_flags(int flags);
-
-    x509_store& set_depth(int depth);
-
-    x509_store& add(x509::roref cert);
-
-    x509_store& add(x509_crl::roref crl);
-
-    inline operator ::X509_STORE*() const
-    {
-        return _store.get();
-    }
-
-private:
-    owned<::X509_STORE> _store;
-};
-
-/**@}*/
-
+} // namespace x509_store
 } // namespace ossl

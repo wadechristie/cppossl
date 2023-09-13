@@ -8,6 +8,7 @@
 
 #include <cppossl/bio.hpp>
 #include <cppossl/raii.hpp>
+#include <cppossl/x509_name.hpp>
 
 namespace ossl {
 namespace x509 {
@@ -24,7 +25,7 @@ namespace x509 {
     owned<::X509> retain(roref x509);
 
     /** @brief Determine if two X.509 objects are equal. */
-    bool equal(roref const& lhs, roref const& rhs);
+    bool equal(roref lhs, roref rhs);
 
     /** @brief Return the X.509 parsed issuer principal. */
     owned<::X509_NAME> get_issuer(roref x509);
@@ -37,6 +38,10 @@ namespace x509 {
 
     /** @brief Get certificate notAfter timestamp. */
     time_t get_not_after(roref x509);
+
+    ossl::owned<::ASN1_INTEGER> get_serial_number(roref x509);
+
+    ossl::owned<::BIGNUM> get_serial_number_bn(roref x509);
 
     std::string get_serial_number_hex(roref x509);
 

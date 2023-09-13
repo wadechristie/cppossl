@@ -7,71 +7,38 @@
 #include "cppossl/error.hpp"
 
 namespace ossl {
+namespace x509_store {
 
-/******************************************************************************
- *
- * x509_store
- *
- ******************************************************************************/
+    owned<::X509_STORE> retain(roref store)
+    {
+        X509_STORE_up_ref(const_cast<::X509_STORE*>(store.get()));
+        return owned<::X509_STORE> { const_cast<::X509_STORE*>(store.get()) };
+    }
 
-owned<::X509_STORE> x509_store::retain(roref store)
-{
-    X509_STORE_up_ref(const_cast<::X509_STORE*>(store.get()));
-    return owned<::X509_STORE> { const_cast<::X509_STORE*>(store.get()) };
-}
+    void set_flags(rwref store, int flags)
+    {
+        if (!X509_STORE_set_flags(store.get(), flags))
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to set new OpenSSL X509_STORE flags."); // LCOV_EXCL_LINE
+    }
 
-x509_store::x509_store()
-    : _store(make<::X509_STORE>())
-{
-    set_flags(X509_V_FLAG_X509_STRICT);
-}
+    void set_depth(rwref store, int depth)
+    {
+        if (!X509_STORE_set_depth(store.get(), depth))
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to set new OpenSSL X509_STORE depth."); // LCOV_EXCL_LINE
+    }
 
-x509_store::x509_store(int flags)
-    : _store(make<::X509_STORE>())
-{
-    set_flags(flags);
-}
+    void add(rwref store, x509::roref x509)
+    {
+        if (!X509_STORE_add_cert(store.get(), const_cast<::X509*>(x509.get())))
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to add X.509 certificate to X.509 store."); // LCOV_EXCL_LINE
+    }
 
-x509_store::x509_store(x509_store const& copy)
-    : _store(retain(copy._store))
-{
-}
+    void add(rwref store, x509_crl::roref crl)
+    {
+        if (!X509_STORE_add_crl(store.get(), const_cast<::X509_CRL*>(crl.get())))
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                "Failed to add X.509 certificate revocation list to X.509 store.");
+    }
 
-x509_store& x509_store::operator=(x509_store const& copy)
-{
-    if (this != &copy)
-        _store = retain(copy._store);
-    return *this;
-}
-
-x509_store& x509_store::set_flags(int flags)
-{
-    if (!X509_STORE_set_flags(_store.get(), flags))
-        CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to set new OpenSSL X509_STORE flags."); // LCOV_EXCL_LINE
-    return *this;
-}
-
-x509_store& x509_store::set_depth(int depth)
-{
-    if (!X509_STORE_set_depth(_store.get(), depth))
-        CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to set new OpenSSL X509_STORE depth."); // LCOV_EXCL_LINE
-    return *this;
-}
-
-x509_store& x509_store::add(x509::roref x509)
-{
-    if (!X509_STORE_add_cert(_store.get(), const_cast<::X509*>(x509.get())))
-        CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to add X.509 certificate to X.509 store."); // LCOV_EXCL_LINE
-    return *this;
-}
-
-x509_store& x509_store::add(x509_crl::roref crl)
-{
-    if (!X509_STORE_add_crl(_store.get(), const_cast<::X509_CRL*>(crl.get())))
-        CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-            "Failed to add X.509 certificate revocation list to X.509 store.");
-
-    return *this;
-}
-
+} // namespace x509_store
 } // namespace ossl
