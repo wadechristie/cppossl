@@ -13,16 +13,18 @@
 #include "cppossl/evp_pkey.hpp"
 
 namespace ossl {
+namespace evp_pkey {
 
-evp_pkey_t new_ref(evp_pkey_t const& key)
-{
-    EVP_PKEY_up_ref(key.get());
-    return evp_pkey_t { key.get() };
-}
+    owned<::EVP_PKEY> retain(roref key)
+    {
+        EVP_PKEY_up_ref(const_cast<::EVP_PKEY*>(key.get()));
+        return owned<::EVP_PKEY> { const_cast<::EVP_PKEY*>(key.get()) };
+    }
 
-bool equal(evp_pkey_t const& lhs, evp_pkey_t const& rhs)
-{
-    return EVP_PKEY_eq(lhs.get(), rhs.get()) == 1;
-}
+    bool equal(roref lhs, roref rhs)
+    {
+        return EVP_PKEY_eq(lhs.get(), rhs.get()) == 1;
+    }
 
+} // namespace evp_pkey
 } // namespace ossl

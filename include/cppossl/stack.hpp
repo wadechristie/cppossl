@@ -18,10 +18,16 @@ namespace ossl {
 namespace stack {
 
     template <typename StackT>
+    raii::owned<StackT> make()
+    {
+        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
+        return raii::owned<StackT>::make();
+    }
+
+    template <typename StackT>
     size_t size(StackT const& sk)
     {
         static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-
         return OPENSSL_sk_num(reinterpret_cast<OPENSSL_STACK*>(sk.get()));
     }
 
@@ -32,7 +38,7 @@ namespace stack {
     }
 
     template <typename StackT>
-    void push(StackT const& sk, raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> elem)
+    void push(StackT const& sk, raii::owned<typename raii::traits<typename StackT::type>::elem_type> elem)
     {
         static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
 
@@ -42,11 +48,20 @@ namespace stack {
     }
 
     template <typename StackT>
-    raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> pop(StackT const& sk)
+    void push(StackT const& sk, raii::roref<typename raii::traits<typename StackT::type>::elem_type> elem)
     {
         static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
 
-        return raii::ossl_ptr<typename raii::traits<typename StackT::type>::elem_type> {
+        if (!OPENSSL_sk_push(reinterpret_cast<OPENSSL_STACK*>(sk.get()), elem.get()))
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to push element onto stack."); // LCOV_EXCL_LINE
+    }
+
+    template <typename StackT>
+    raii::owned<typename raii::traits<typename StackT::type>::elem_type> pop(StackT const& sk)
+    {
+        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
+
+        return raii::owned<typename raii::traits<typename StackT::type>::elem_type> {
             reinterpret_cast<typename raii::traits<typename StackT::type>::elem_type*>(
                 OPENSSL_sk_pop(reinterpret_cast<OPENSSL_STACK*>(sk.get())))
         };

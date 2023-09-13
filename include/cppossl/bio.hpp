@@ -20,7 +20,8 @@ namespace ossl {
 /**@{*/
 
 /** @brief BIO filter utility type. */
-class bio_filter {
+class bio_filter
+{
 public:
     static bio_filter base64();
 
@@ -51,19 +52,23 @@ public:
 private:
     bio_filter() noexcept = delete;
 
-    inline explicit bio_filter(bio_t bio) noexcept
+    inline explicit bio_filter(owned<::BIO> bio) noexcept
         : _bio(std::move(bio))
     {
     }
 
-    bio_t _bio;
+    owned<::BIO> _bio;
 
     friend class bio;
 };
 
 /** @brief BIO source/sink utility type. */
-class bio {
+class bio
+{
 public:
+    using roref = raii::roref<::BIO>;
+    using rwref = raii::rwref<::BIO>;
+
     /** @brief Allocate an OpenSSL read-only BIO object from a memory buffer. */
     static bio from_memory(void const* data, size_t length);
 
@@ -108,16 +113,17 @@ public:
 protected:
     bio() noexcept = default;
 
-    inline explicit bio(bio_t bio) noexcept
+    inline explicit bio(owned<::BIO> bio) noexcept
         : _bio(std::move(bio))
     {
     }
 
-    bio_t _bio;
+    owned<::BIO> _bio;
 };
 
 /** @brief Buffered OpenSSL BIO utility type. */
-class buffered_bio : public bio {
+class buffered_bio : public bio
+{
 public:
     buffered_bio();
 

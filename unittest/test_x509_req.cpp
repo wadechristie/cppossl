@@ -41,19 +41,19 @@ TEST_CASE("Load CSR", "[x509][req][ossl]")
 
     SECTION("Valid PEM String")
     {
-        x509_req_t req;
-        REQUIRE_NOTHROW(req = pem::load<x509_req_t>(testpemstr));
+        owned<::X509_REQ> req;
+        REQUIRE_NOTHROW(req = pem::load<::X509_REQ>(testpemstr));
         REQUIRE(req);
     }
 
     SECTION("Invalid PEM String")
     {
-        REQUIRE_THROWS_AS(pem::load<x509_req_t>(testpemstr.substr(0, 32)), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<::X509_REQ>(testpemstr.substr(0, 32)), openssl_error);
     }
 }
 
 TEST_CASE("Pemify CRL", "[x509][req][ossl]")
 {
-    x509_req_t req = pem::load<x509_req_t>(testpemstr);
+    owned<::X509_REQ> req = pem::load<::X509_REQ>(testpemstr);
     REQUIRE(pem::to_pem_string(req) == testpemstr);
 }

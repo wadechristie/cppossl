@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cppossl/raii.hpp>
+#include <cppossl/x509.hpp>
+#include <cppossl/x509_crl.hpp>
 
 namespace ossl {
 
@@ -13,12 +15,16 @@ namespace ossl {
  */
 /**@{*/
 
-/** @brief Retrieve a new reference to the given OpenSSL X509_STORE object. */
-x509_store_t new_ref(x509_store_t const& store);
-
 /** @brief C++ utility wrapper around `x509_store_ptr`. */
-class x509_store {
+class x509_store
+{
 public:
+    using roref = raii::roref<::X509_STORE>;
+    using rwref = raii::rwref<::X509_STORE>;
+
+    /** @brief Retrieve a new reference to the given OpenSSL X509_STORE object. */
+    static owned<::X509_STORE> retain(roref store);
+
     x509_store();
 
     template <typename IterT>
@@ -43,9 +49,9 @@ public:
 
     x509_store& set_depth(int depth);
 
-    x509_store& add(x509_t const& cert);
+    x509_store& add(x509::roref cert);
 
-    x509_store& add(x509_crl_t const& crl);
+    x509_store& add(x509_crl::roref crl);
 
     inline operator ::X509_STORE*() const
     {
@@ -53,7 +59,7 @@ public:
     }
 
 private:
-    x509_store_t _store;
+    owned<::X509_STORE> _store;
 };
 
 /**@}*/

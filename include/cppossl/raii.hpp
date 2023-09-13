@@ -27,60 +27,59 @@ namespace raii {
     };
 
     template <typename T>
-    class ossl_ptr
+    class owned
     {
     public:
         typedef T type;
 
         template <typename... ArgsT>
-        static ossl_ptr<T> make(ArgsT&&... args)
+        static owned<T> make(ArgsT&&... args)
         {
-            return ossl_ptr<T> { traits<T>::newfn(std::forward<ArgsT>(args)...) };
+            return owned<T> { traits<T>::newfn(std::forward<ArgsT>(args)...) };
         }
 
-        ossl_ptr() noexcept = default;
+        owned() noexcept = default;
 
-        explicit ossl_ptr(T* ptr) noexcept
+        explicit owned(T* ptr) noexcept
             : _ptr(ptr)
         {
         }
 
-        ossl_ptr(ossl_ptr&& move) noexcept
+        owned(owned&& move) noexcept
         {
             std::swap(_ptr, move._ptr);
         }
 
-        ossl_ptr& operator=(ossl_ptr&& move) noexcept
+        owned& operator=(owned&& move) noexcept
         {
             std::swap(_ptr, move._ptr);
             return *this;
         }
 
-        ossl_ptr(ossl_ptr const&) = delete;
-        ossl_ptr& operator=(ossl_ptr const&) = delete;
+        owned(owned const&) = delete;
+        owned& operator=(owned const&) = delete;
 
-        ~ossl_ptr() noexcept
+        ~owned() noexcept
         {
-            if (_ptr != nullptr)
-                traits<T>::freefn(_ptr);
+            destroy();
         }
 
-        bool operator==(std::nullptr_t const&) const
+        operator bool() const noexcept
+        {
+            return _ptr != nullptr;
+        }
+
+        bool operator==(std::nullptr_t const&) const noexcept
         {
             return _ptr == nullptr;
         }
 
-        bool operator!=(std::nullptr_t const&) const
+        bool operator!=(std::nullptr_t const&) const noexcept
         {
             return _ptr != nullptr;
         }
 
-        operator bool() const
-        {
-            return _ptr != nullptr;
-        }
-
-        T* operator->() const
+        T* operator->() const noexcept
         {
             return _ptr;
         }
@@ -102,11 +101,126 @@ namespace raii {
             return ret;
         }
 
+        T** capture() noexcept
+        {
+            destroy();
+            return &_ptr;
+        }
+
+    private:
+        void destroy()
+        {
+            if (_ptr != nullptr)
+            {
+                traits<T>::freefn(_ptr);
+                _ptr = nullptr;
+            }
+        }
+        T* _ptr { nullptr };
+    };
+
+    template <typename T>
+    class rwref
+    {
+    public:
+        rwref(::X509_NAME* ptr) noexcept
+            : _ptr(ptr)
+        {
+        }
+
+        rwref(owned<T> const& owned) noexcept
+            : _ptr(owned.get())
+        {
+        }
+
+        rwref(rwref&&) = delete;
+        rwref& operator=(rwref&&) = delete;
+
+        rwref(rwref const&) = default;
+        rwref& operator=(rwref const&) = delete;
+
+        ~rwref() noexcept
+        {
+        }
+
+        operator bool() const noexcept
+        {
+            return _ptr != nullptr;
+        }
+
+        bool operator==(std::nullptr_t const&) const noexcept
+        {
+            return _ptr == nullptr;
+        }
+
+        bool operator!=(std::nullptr_t const&) const noexcept
+        {
+            return _ptr != nullptr;
+        }
+
+        T* get() noexcept
+        {
+            return _ptr;
+        }
+
     private:
         T* _ptr { nullptr };
     };
 
-} // namespace _
+    template <typename T>
+    class roref
+    {
+    public:
+        roref(T const* ptr) noexcept
+            : _ptr(ptr)
+        {
+        }
+
+        roref(rwref<T> const& ref) noexcept
+            : _ptr(ref)
+        {
+        }
+
+        roref(owned<T> const& owned) noexcept
+            : _ptr(owned.get())
+        {
+        }
+
+        roref(roref&&) = delete;
+        roref& operator=(roref&&) = delete;
+
+        roref(roref const&) = default;
+        roref& operator=(roref const&) = delete;
+
+        ~roref() noexcept
+        {
+        }
+
+        operator bool() const noexcept
+        {
+            return _ptr != nullptr;
+        }
+
+        bool operator==(std::nullptr_t const&) const noexcept
+        {
+            return _ptr == nullptr;
+        }
+
+        bool operator!=(std::nullptr_t const&) const noexcept
+        {
+            return _ptr != nullptr;
+        }
+
+        T const* get() noexcept
+        {
+            return _ptr;
+        }
+
+    private:
+        T const* _ptr { nullptr };
+    };
+
+} // namespace raii
 
 #define DEFINE_OSSL_RAII_OBJECT_TRAITS(TypeT, NewFn, FreeFN) \
     template <>                                              \
@@ -151,6 +265,7 @@ DEFINE_OSSL_RAII_TRAITS_AUTO(X509);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_CRL);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_EXTENSION);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_NAME);
+DEFINE_OSSL_RAII_TRAITS_AUTO(X509_NAME_ENTRY);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_REQ);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_REVOKED);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_STORE);
@@ -160,6 +275,7 @@ DEFINE_OSSL_RAII_TRAITS_AUTO(X509_VERIFY_PARAM);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(BIGNUM, BN_new, BN_free);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(BIO, BIO_new, BIO_free_all);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(char, nullptr, [](char* p) { OPENSSL_free(p); });
+DEFINE_OSSL_RAII_OBJECT_TRAITS(uint8_t, nullptr, [](uint8_t* p) { OPENSSL_free(p); });
 
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(DIST_POINT);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(GENERAL_NAME);
@@ -167,31 +283,14 @@ DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509_CRL);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509_EXTENSION);
 
-using asn1_bit_string_t = raii::ossl_ptr<::ASN1_STRING>;
-using asn1_ia5string_t = raii::ossl_ptr<::ASN1_STRING>;
-using asn1_enumerated_t = raii::ossl_ptr<::ASN1_STRING>;
-using asn1_octect_string_t = raii::ossl_ptr<::ASN1_STRING>;
-using asn1_time_t = raii::ossl_ptr<::ASN1_TIME>;
-using bignum_t = raii::ossl_ptr<::BIGNUM>;
-using bio_t = raii::ossl_ptr<::BIO>;
-using ossl_cstring_t = raii::ossl_ptr<char>;
-using dist_point_t = raii::ossl_ptr<::DIST_POINT>;
-using dist_point_sk_t = raii::ossl_ptr<STACK_OF(DIST_POINT)>;
-using dist_point_name_t = raii::ossl_ptr<::DIST_POINT_NAME>;
-using evp_pkey_t = raii::ossl_ptr<::EVP_PKEY>;
-using general_name_t = raii::ossl_ptr<::GENERAL_NAME>;
-using general_name_sk_t = raii::ossl_ptr<STACK_OF(GENERAL_NAME)>;
-using x509_t = raii::ossl_ptr<::X509>;
-using x509_crl_t = raii::ossl_ptr<::X509_CRL>;
-using x509_crl_sk_t = raii::ossl_ptr<STACK_OF(X509_CRL)>;
-using x509_extension_t = raii::ossl_ptr<::X509_EXTENSION>;
-using x509_extension_sk_t = raii::ossl_ptr<STACK_OF(X509_EXTENSION)>;
-using x509_name_t = raii::ossl_ptr<::X509_NAME>;
-using x509_req_t = raii::ossl_ptr<::X509_REQ>;
-using x509_revoked_t = raii::ossl_ptr<::X509_REVOKED>;
-using x509_store_t = raii::ossl_ptr<::X509_STORE>;
-using x509_store_ctx_t = raii::ossl_ptr<::X509_STORE_CTX>;
-using x509_verify_param_t = raii::ossl_ptr<::X509_VERIFY_PARAM>;
+template <typename T>
+using owned = raii::owned<T>;
+
+template <typename T, typename... ArgsT>
+raii::owned<T> make(ArgsT&&... args)
+{
+    return raii::owned<T> { raii::traits<T>::newfn(std::forward<ArgsT>(args)...) };
+}
 
 /**@}*/
 

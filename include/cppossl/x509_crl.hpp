@@ -10,33 +10,26 @@
 #include <cppossl/raii.hpp>
 
 namespace ossl {
+namespace x509_crl {
 
-/**
- * \defgroup x509_crl OpenSSL X509_CRL
- */
-/**@{*/
+    /**
+     * \defgroup x509_crl OpenSSL X509_CRL
+     */
+    /**@{*/
 
-/** @brief Retrieve a new reference to the given X.509 CRL object. */
-x509_crl_t new_ref(x509_crl_t const& crl);
+    using roref = raii::roref<::X509_CRL>;
+    using rwref = raii::rwref<::X509_CRL>;
 
-/** @brief Print X.509 CRL text to a string. */
-std::string print_text(::X509_CRL const* crl);
+    /** @brief Retrieve a new reference to the given X.509 CRL object. */
+    owned<::X509_CRL> retain(roref crl);
 
-/** @brief Print X.509 CRL text to a string. */
-inline std::string print_text(x509_crl_t const& crl)
-{
-    return print_text(crl.get());
-}
+    /** @brief Print X.509 CRL text to a string. */
+    std::string print_text(roref crl);
 
-/** @brief Print X.509 CRL text to an OpenSSL BIO. */
-void print_text(bio const& bio, ::X509_CRL const* crl);
+    /** @brief Print X.509 CRL text to an OpenSSL BIO. */
+    void print_text(bio const& bio, roref crl);
 
-/** @brief Print X.509 CRL text to an OpenSSL BIO. */
-inline void print_text(bio const& bio, x509_crl_t const& crl)
-{
-    print_text(bio, crl.get());
-}
+    /**@}*/
 
-/**@}*/
-
+} // namespace x509_crl
 } // namespace ossl

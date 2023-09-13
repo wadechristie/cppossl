@@ -10,7 +10,7 @@
 
 TEST_CASE("OpenSSL Stack Helpers", "[stack]")
 {
-    auto sk = ossl::general_name_sk_t::make();
+    auto sk = ossl::make<STACK_OF(GENERAL_NAME)>();
     REQUIRE(ossl::stack::empty(sk));
 
     SECTION("Push")
@@ -18,17 +18,17 @@ TEST_CASE("OpenSSL Stack Helpers", "[stack]")
         constexpr size_t count = 10;
         for (size_t i = 0; i < count; ++i)
         {
-            REQUIRE_NOTHROW(ossl::stack::push(sk, ossl::general_name_t::make()));
+            REQUIRE_NOTHROW(ossl::stack::push(sk, ossl::make<GENERAL_NAME>()));
             REQUIRE(ossl::stack::size(sk) == (i + 1));
         }
     }
 
     SECTION("Pop")
     {
-        REQUIRE_NOTHROW(ossl::stack::push(sk, ossl::general_name_t::make()));
+        REQUIRE_NOTHROW(ossl::stack::push(sk, ossl::make<GENERAL_NAME>()));
         REQUIRE_FALSE(ossl::stack::empty(sk));
 
-        ossl::general_name_t elem;
+        ossl::owned<::GENERAL_NAME> elem;
         REQUIRE_NOTHROW(elem = ossl::stack::pop(sk));
         REQUIRE(ossl::stack::empty(sk));
         REQUIRE(elem);

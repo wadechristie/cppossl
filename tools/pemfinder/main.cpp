@@ -132,10 +132,10 @@ int main(int argc, char const* argv[])
 
                 if (args.print_text)
                 {
-                    auto const cert = ossl::pem::load<ossl::x509_t>(pem);
+                    auto const cert = ossl::pem::load<::X509>(pem);
                     std::cout << ossl::pem::pem_begin_line_prefix << "CERTIFICATE INFO" << ossl::pem::pem_line_suffix
                               << std::endl;
-                    std::cout << ossl::print_text(cert);
+                    std::cout << ossl::x509::print_text(cert);
                     std::cout << ossl::pem::pem_end_line_prefix << "CERTIFICATE INFO" << ossl::pem::pem_line_suffix
                               << std::endl;
                 }
@@ -146,10 +146,10 @@ int main(int argc, char const* argv[])
 
                 if (args.print_text)
                 {
-                    auto const crl = ossl::pem::load<ossl::x509_crl_t>(pem);
+                    auto const crl = ossl::pem::load<::X509_CRL>(pem);
                     std::cout << ossl::pem::pem_begin_line_prefix << "X509 CRL INFO" << ossl::pem::pem_line_suffix
                               << std::endl;
-                    std::cout << ossl::print_text(crl);
+                    std::cout << ossl::x509_crl::print_text(crl);
                     std::cout << ossl::pem::pem_end_line_prefix << "X509 CRL INFO" << ossl::pem::pem_line_suffix
                               << std::endl;
                 }
@@ -160,10 +160,10 @@ int main(int argc, char const* argv[])
 
                 if (args.print_text)
                 {
-                    auto const req = ossl::pem::load<ossl::x509_req_t>(pem);
+                    auto const req = ossl::pem::load<::X509_REQ>(pem);
                     std::cout << ossl::pem::pem_begin_line_prefix << "CERTIFICATE REQUEST INFO"
                               << ossl::pem::pem_line_suffix << std::endl;
-                    std::cout << ossl::print_text(req);
+                    std::cout << ossl::x509_req::print_text(req);
                     std::cout << ossl::pem::pem_end_line_prefix << "CERTIFICATE REQUEST INFO"
                               << ossl::pem::pem_line_suffix << std::endl;
                 }

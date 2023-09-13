@@ -13,6 +13,7 @@ SET(CPPOSSL_UNITTEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/test_openssl_error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stack.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_crl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_req.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509.cpp
 )

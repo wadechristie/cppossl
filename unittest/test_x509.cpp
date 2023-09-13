@@ -36,17 +36,17 @@ TEST_CASE("Load X.509", "[x509]")
 
     SECTION("Valid PEM String")
     {
-        x509_t x509;
-        REQUIRE_NOTHROW(x509 = pem::load<x509_t>(pemstr));
+        owned<::X509> x509;
+        REQUIRE_NOTHROW(x509 = pem::load<::X509>(pemstr));
         REQUIRE(x509);
 
-        REQUIRE(get_not_before(x509) == 1694011572);
-        REQUIRE(get_not_after(x509) == 1694616372);
-        REQUIRE(get_serial_number_hex(x509) == "8CE97DE51458BCB9");
+        REQUIRE(x509::get_not_before(x509) == 1694011572);
+        REQUIRE(x509::get_not_after(x509) == 1694616372);
+        REQUIRE(x509::get_serial_number_hex(x509) == "8CE97DE51458BCB9");
     }
 
     SECTION("Invalid PEM String")
     {
-        REQUIRE_THROWS_AS(pem::load<x509_t>(pemstr.substr(0, 32)), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<::X509>(pemstr.substr(0, 32)), openssl_error);
     }
 }

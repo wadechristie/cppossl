@@ -10,33 +10,35 @@
 #include "cppossl/x509_crl.hpp"
 
 namespace ossl {
+namespace x509_crl {
 
-namespace _ {
+    namespace _ {
 
-    static void x509_crl_print_text(bio const& bio, ::X509_CRL const* req)
+        static void x509_crl_print_text(bio const& bio, roref req)
+        {
+            if (X509_CRL_print_ex(bio, const_cast<X509_CRL*>(req.get()), 0) <= 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to print X.509 CRL object to text."); // LCOV_EXCL_LINE
+        } // LCOV_EXCL_LINE
+
+    } // _ namespace
+
+    owned<::X509_CRL> retain(roref crl)
     {
-        if (X509_CRL_print_ex(bio, const_cast<X509_CRL*>(req), 0) <= 0)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to print X.509 CRL object to text."); // LCOV_EXCL_LINE
-    } // LCOV_EXCL_LINE
+        X509_CRL_up_ref(const_cast<::X509_CRL*>(crl.get()));
+        return owned<::X509_CRL> { const_cast<::X509_CRL*>(crl.get()) };
+    }
 
-} // _ namespace
+    void print_text(bio const& bio, roref crl)
+    {
+        _::x509_crl_print_text(bio, crl);
+    }
 
-x509_crl_t new_ref(x509_crl_t const& crl)
-{
-    X509_CRL_up_ref(crl.get());
-    return x509_crl_t { crl.get() };
-}
+    std::string print_text(roref crl)
+    {
+        buffered_bio bio;
+        print_text(bio, crl);
+        return bio.str();
+    }
 
-void print_text(bio const& bio, ::X509_CRL const* crl)
-{
-    _::x509_crl_print_text(bio, crl);
-}
-
-std::string print_text(::X509_CRL const* crl)
-{
-    buffered_bio bio;
-    print_text(bio, crl);
-    return bio.str();
-}
-
+} // namespace x509_crl
 } // namespace ossl

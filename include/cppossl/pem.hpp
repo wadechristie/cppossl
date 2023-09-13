@@ -7,7 +7,11 @@
 #include <string>
 #include <string_view>
 
+#include <cppossl/evp_pkey.hpp>
 #include <cppossl/raii.hpp>
+#include <cppossl/x509.hpp>
+#include <cppossl/x509_crl.hpp>
+#include <cppossl/x509_req.hpp>
 
 namespace ossl {
 namespace pem {
@@ -36,85 +40,30 @@ namespace pem {
     static constexpr std::string_view x509_req_begin_line = "-----BEGIN CERTIFICATE REQUEST-----";
     static constexpr std::string_view x509_req_end_line = "-----END CERTIFICATE REQUEST-----";
 
-    void to_pem(::BIO* bio, ::X509 const* x509);
-
-    inline void to_pem(bio_t const& bio, x509_t const& x509)
-    {
-        to_pem(bio.get(), x509.get());
-    }
+    void to_pem(bio::roref bio, x509::roref x509);
 
     /** @brief Convert the OpenSSL X.509 certificate object to a PEM string. */
-    std::string to_pem_string(::X509 const* x509);
+    std::string to_pem_string(x509::roref x509);
 
-    /** @brief Convert the OpenSSL X.509 certificate object to a PEM string. */
-    inline std::string to_pem_string(x509_t const& x509)
-    {
-        return to_pem_string(x509.get());
-    }
-
-    void to_pem(::BIO* bio, ::X509_CRL const* crl);
-
-    inline void to_pem(bio_t const& bio, x509_crl_t const& crl)
-    {
-        to_pem(bio.get(), crl.get());
-    }
+    void to_pem(bio::roref bio, x509_crl::roref crl);
 
     /** @brief Convert the OpenSSL X.509 certificate revocation list object to a PEM string. */
-    std::string to_pem_string(::X509_CRL const* crl);
+    std::string to_pem_string(x509_crl::roref crl);
 
-    /** @brief Convert the OpenSSL X.509 certificate revocation list object to a PEM string. */
-    inline std::string to_pem_string(x509_crl_t const& crl)
-    {
-        return to_pem_string(crl.get());
-    }
-
-    void to_pem(::BIO* bio, ::X509_REQ const* req);
-
-    inline void to_pem(bio_t const& bio, x509_req_t const& req)
-    {
-        to_pem(bio.get(), req.get());
-    }
+    void to_pem(bio::roref bio, x509_req::roref req);
 
     /** @brief Convert the OpenSSL X.509 certificate request object to a PEM string. */
-    std::string to_pem_string(::X509_REQ const* req);
+    std::string to_pem_string(x509_req::roref req);
 
-    /** @brief Convert the OpenSSL X.509 certificate request object to a PEM string. */
-    inline std::string to_pem_string(x509_req_t const& req)
-    {
-        return to_pem_string(req.get());
-    }
+    void to_pem(bio::roref bio, evp_pkey::roref pkey);
 
-    void to_pem(::BIO* bio, ::EVP_PKEY const* pkey);
-
-    void to_pem(::BIO* bio, ::EVP_PKEY const* pkey, std::string_view const& password);
-
-    inline void to_pem(bio_t const& bio, evp_pkey_t const& pkey)
-    {
-        to_pem(bio.get(), pkey.get());
-    }
-
-    inline void to_pem(bio_t const& bio, evp_pkey_t const& pkey, std::string_view const& password)
-    {
-        to_pem(bio.get(), pkey.get(), password);
-    }
+    void to_pem(bio::roref bio, evp_pkey::roref pkey, std::string_view const& password);
 
     /** @brief Convert the OpenSSL private key object to a PEM string. */
-    std::string to_pem_string(::EVP_PKEY const* pkey);
+    std::string to_pem_string(evp_pkey::roref pkey);
 
     /** @brief Convert the OpenSSL private key object to a PEM string. */
-    std::string to_pem_string(::EVP_PKEY const* pkey, std::string_view const& password);
-
-    /** @brief Convert the OpenSSL private key object to a PEM string. */
-    inline std::string to_pem_string(evp_pkey_t const& pkey)
-    {
-        return to_pem_string(pkey.get());
-    }
-
-    /** @brief Convert the OpenSSL private key object to a PEM string. */
-    inline std::string to_pem_string(evp_pkey_t const& pkey, std::string_view const& password)
-    {
-        return to_pem_string(pkey.get(), password);
-    }
+    std::string to_pem_string(evp_pkey::roref pkey, std::string_view const& password);
 
     /** @brief Default PEM load causes a build error. */
     template <typename T>
@@ -128,35 +77,35 @@ namespace pem {
 
     /** @brief Load PEM encoded X.509 certificate. */
     template <>
-    struct loader<x509_t>
+    struct loader<::X509>
     {
-        static x509_t load(std::string_view const& pem);
+        static owned<::X509> load(std::string_view const& pem);
     };
 
     /** @brief Load PEM encoded X.509 certificate revocation list. */
     template <>
-    struct loader<x509_crl_t>
+    struct loader<::X509_CRL>
     {
-        static x509_crl_t load(std::string_view const& pem);
+        static owned<::X509_CRL> load(std::string_view const& pem);
     };
 
     /** @brief Load PEM encoded X.509 certificate request. */
     template <>
-    struct loader<x509_req_t>
+    struct loader<::X509_REQ>
     {
-        static x509_req_t load(std::string_view const& pem);
+        static owned<::X509_REQ> load(std::string_view const& pem);
     };
 
     /** @brief Load PEM encoded private key. */
     template <>
-    struct loader<evp_pkey_t>
+    struct loader<::EVP_PKEY>
     {
-        static evp_pkey_t load(std::string_view const& pem);
-        static evp_pkey_t load(std::string_view const& pem, std::string_view const& password);
+        static owned<::EVP_PKEY> load(std::string_view const& pem);
+        static owned<::EVP_PKEY> load(std::string_view const& pem, std::string_view const& password);
     };
 
     template <typename T, typename... ArgsT>
-    T load(ArgsT&&... args)
+    auto load(ArgsT&&... args)
     {
         return loader<T>::load(std::forward<ArgsT>(args)...);
     }

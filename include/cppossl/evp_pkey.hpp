@@ -6,21 +6,27 @@
 
 #include <string>
 
+#include <openssl/evp.h>
+
 #include <cppossl/raii.hpp>
 
 namespace ossl {
+namespace evp_pkey {
 
-/**
- * \defgroup evp_pkey OpenSSL EVP_PKEY
- */
-/**@{*/
+    using roref = raii::roref<::EVP_PKEY>;
 
-/** @brief Retrieve a new reference to the given private key object. */
-evp_pkey_t new_ref(evp_pkey_t const& key);
+    /**
+     * \defgroup evp_pkey OpenSSL EVP_PKEY
+     */
+    /**@{*/
 
-/** @brief Determine if two private key's are equal. */
-bool equal(evp_pkey_t const& lhs, evp_pkey_t const& rhs);
+    /** @brief Retrieve a new reference to the given private key object. */
+    owned<::EVP_PKEY> retain(roref key);
 
-/**@}*/
+    /** @brief Determine if two private key's are equal. */
+    bool equal(roref lhs, roref rhs);
 
+    /**@}*/
+
+} // namespace evp_pkey
 } // namespace ossl

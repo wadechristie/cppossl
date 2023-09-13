@@ -22,58 +22,58 @@ TEST_CASE("evp_pkey_t - PEM", "[evp_pkey]")
 
     SECTION("Load Valid PEM")
     {
-        evp_pkey_t key;
-        REQUIRE_NOTHROW(key = pem::load<evp_pkey_t>(testpemstr));
+        owned<::EVP_PKEY> key;
+        REQUIRE_NOTHROW(key = pem::load<::EVP_PKEY>(testpemstr));
         REQUIRE(key);
     }
 
     SECTION("Load Invalid PEM")
     {
-        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(testpemstr.substr(0, 32)), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<::EVP_PKEY>(testpemstr.substr(0, 32)), openssl_error);
     }
 
     SECTION("Passwordless PEM")
     {
-        evp_pkey_t const orig_key = pem::load<evp_pkey_t>(testpemstr);
+        auto const orig_key = pem::load<::EVP_PKEY>(testpemstr);
         REQUIRE(orig_key);
 
         auto const pemstr = pem::to_pem_string(orig_key);
         REQUIRE_THAT(pemstr, ContainsSubstring("BEGIN PRIVATE KEY"));
 
-        evp_pkey_t load_from_pem;
-        REQUIRE_NOTHROW(load_from_pem = pem::load<evp_pkey_t>(pemstr));
-        REQUIRE(equal(orig_key, load_from_pem));
+        owned<::EVP_PKEY> load_from_pem;
+        REQUIRE_NOTHROW(load_from_pem = pem::load<::EVP_PKEY>(pemstr));
+        REQUIRE(evp_pkey::equal(orig_key, load_from_pem));
     }
 
     SECTION("Password Protected")
     {
-        evp_pkey_t const orig_key = pem::load<evp_pkey_t>(testpemstr);
+        auto const orig_key = pem::load<::EVP_PKEY>(testpemstr);
         REQUIRE(orig_key);
 
         std::string const password = "qwertyuiop";
         auto const pemstr = pem::to_pem_string(orig_key, password);
         REQUIRE_THAT(pemstr, ContainsSubstring("BEGIN ENCRYPTED PRIVATE KEY"));
 
-        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(pemstr), openssl_error);
-        REQUIRE_THROWS_AS(pem::load<evp_pkey_t>(pemstr, "bad_password"), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<::EVP_PKEY>(pemstr), openssl_error);
+        REQUIRE_THROWS_AS(pem::load<::EVP_PKEY>(pemstr, "bad_password"), openssl_error);
 
-        evp_pkey_t load_key;
-        REQUIRE_NOTHROW(load_key = pem::load<evp_pkey_t>(pemstr, password));
-        REQUIRE(equal(orig_key, load_key));
+        owned<::EVP_PKEY> load_key;
+        REQUIRE_NOTHROW(load_key = pem::load<::EVP_PKEY>(pemstr, password));
+        REQUIRE(evp_pkey::equal(orig_key, load_key));
     }
 }
 
-TEST_CASE("evp_pkey_t - new_ref()", "[evp_pkey]")
+TEST_CASE("evp_pkey_t - retain()", "[evp_pkey]")
 {
     auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
 
-    evp_pkey_t key;
+    owned<::EVP_PKEY> key;
     REQUIRE_FALSE(key);
 
     {
-        auto const innerkey = pem::load<evp_pkey_t>(testpemstr);
+        auto const innerkey = pem::load<::EVP_PKEY>(testpemstr);
         REQUIRE(innerkey);
-        REQUIRE_NOTHROW(key = new_ref(innerkey));
+        REQUIRE_NOTHROW(key = evp_pkey::retain(innerkey));
     }
 
     REQUIRE(key);

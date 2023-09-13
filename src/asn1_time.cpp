@@ -9,19 +9,19 @@
 namespace ossl {
 namespace asn1_time {
 
-    asn1_time_t now()
+    owned<::ASN1_TIME> now()
     {
         return offset(std::chrono::seconds::zero());
     }
 
-    asn1_time_t offset(std::chrono::seconds const& from_now)
+    owned<::ASN1_TIME> offset(std::chrono::seconds const& from_now)
     {
-        auto t = asn1_time_t::make();
+        auto t = owned<::ASN1_TIME>::make();
         set_offset(t.get(), from_now);
         return t;
     } // LCOV_EXCL_LINE
 
-    asn1_time_t from_unix(time_t const& unixts)
+    owned<::ASN1_TIME> from_unix(time_t const& unixts)
     {
         time_t const now = time(nullptr);
         return offset(std::chrono::seconds(now - unixts));

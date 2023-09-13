@@ -65,7 +65,7 @@ namespace _ {
 
 bio_filter bio_filter::base64()
 {
-    bio_t bio { BIO_new(BIO_f_base64()) };
+    owned<::BIO> bio { BIO_new(BIO_f_base64()) };
     if (bio == nullptr)
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL base64 filter BIO."); // LCOV_EXCL_LINE
     return bio_filter { std::move(bio) };
@@ -74,7 +74,7 @@ bio_filter bio_filter::base64()
 bio_filter bio_filter::encryption(
     EVP_CIPHER const* cipher, void const* key, size_t const keylen, void const* iv, size_t const ivlen)
 {
-    bio_t bio { BIO_new(BIO_f_cipher()) };
+    owned<::BIO> bio { BIO_new(BIO_f_cipher()) };
     if (bio == nullptr)
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL cipher filter BIO."); // LCOV_EXCL_LINE
 
@@ -111,7 +111,7 @@ bio_filter bio_filter::encryption(::EVP_CIPHER const* cipher, std::string_view c
 bio_filter bio_filter::decryption(
     ::EVP_CIPHER const* cipher, void const* key, size_t const keylen, void const* iv, size_t const ivlen)
 {
-    bio_t bio { BIO_new(BIO_f_cipher()) };
+    owned<::BIO> bio { BIO_new(BIO_f_cipher()) };
     if (bio == nullptr)
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate cipher filter BIO."); // LCOV_EXCL_LINE
 
@@ -147,7 +147,7 @@ bio_filter bio_filter::decryption(::EVP_CIPHER const* cipher, std::string_view c
 
 bio bio::from_memory(void const* data, size_t length)
 {
-    bio_t membufbio { BIO_new_mem_buf(data, length) };
+    owned<::BIO> membufbio { BIO_new_mem_buf(data, length) };
     if (membufbio == nullptr) // LCOV_EXCL_LINE
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL static buffer BIO."); // LCOV_EXCL_LINE
     return bio { std::move(membufbio) };
@@ -155,7 +155,7 @@ bio bio::from_memory(void const* data, size_t length)
 
 bio bio::from_fd(int fd)
 {
-    bio_t fdbio { BIO_new_fd(fd, BIO_NOCLOSE) };
+    owned<::BIO> fdbio { BIO_new_fd(fd, BIO_NOCLOSE) };
     if (fdbio == nullptr) // LCOV_EXCL_LINE
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL fd BIO."); // LCOV_EXCL_LINE
     return bio { std::move(fdbio) };
@@ -193,7 +193,7 @@ bool bio::pending() const
 
 buffered_bio::buffered_bio()
 {
-    bio_t membio { BIO_new(BIO_s_mem()) };
+    owned<::BIO> membio { BIO_new(BIO_s_mem()) };
     if (membio == nullptr) // LCOV_EXCL_LINE
         CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL dynamic buffer BIO."); // LCOV_EXCL_LINE
     _bio = std::move(membio);
