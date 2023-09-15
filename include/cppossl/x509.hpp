@@ -13,13 +13,13 @@
 namespace ossl {
 namespace x509 {
 
-    using roref = raii::roref<::X509>;
-    using rwref = raii::rwref<::X509>;
-
     /**
      * \defgroup x509 OpenSSL X509
      */
     /**@{*/
+
+    using roref = raii::roref<::X509>;
+    using rwref = raii::rwref<::X509>;
 
     /** @brief Retrieve a new reference to the given X.509 object. */
     owned<::X509> retain(roref x509);

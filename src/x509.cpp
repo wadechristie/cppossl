@@ -5,6 +5,7 @@
 
 #include <openssl/pem.h>
 
+#include "cppossl/asn1_time.hpp"
 #include "cppossl/bio.hpp"
 #include "cppossl/error.hpp"
 #include "cppossl/raii.hpp"
@@ -46,20 +47,12 @@ namespace x509 {
 
     time_t get_not_before(roref x509)
     {
-        ::tm time { 0 };
-        if (ASN1_TIME_to_tm(X509_getm_notBefore(x509.get()), &time) != 1)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to parse X.509 not after."); // LCOV_EXCL_LINE
-
-        return timegm(&time);
+        return asn1_time::to_unix((X509_getm_notBefore(x509.get())));
     }
 
     time_t get_not_after(roref x509)
     {
-        ::tm time { 0 };
-        if (ASN1_TIME_to_tm(X509_getm_notAfter(x509.get()), &time) != 1)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to parse X.509 not after."); // LCOV_EXCL_LINE
-
-        return timegm(&time);
+        return asn1_time::to_unix(X509_getm_notAfter(x509.get()));
     }
 
     ossl::owned<::ASN1_INTEGER> get_serial_number(roref x509)
@@ -76,7 +69,7 @@ namespace x509 {
         if (bn == nullptr)
             CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number as OpenSSL BIGNUM."); // LCOV_EXCL_LINE
         return bn;
-    }
+    } // LCOV_EXCL_LINE
 
     std::string get_serial_number_hex(roref x509)
     {

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 
+#include "cppossl/general_name.hpp"
 #include <cppossl/evp_pkey.hpp>
 #include <cppossl/x509_name.hpp>
 #include <cppossl/x509_req.hpp>
@@ -75,7 +76,7 @@ namespace x509_req {
         builder& set_subject_alt_names_ext(owned<STACK_OF(GENERAL_NAME)> const& altnames);
 
         /**
-         * @brief Add the subjectAltNames extension to the the X.509 certificate request from the given vector of names.
+         * @brief Add the subjectAltNames extension to the X.509 certificate request from the given vector of names.
          *
          * @throws ossl::openssl_error
          */

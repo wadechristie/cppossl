@@ -8,6 +8,7 @@
 #include "cppossl/error.hpp"
 #include "cppossl/general_name.hpp"
 #include "cppossl/stack.hpp"
+#include "cppossl/x509_extension.hpp"
 
 namespace ossl {
 namespace x509_req {
@@ -45,48 +46,22 @@ namespace x509_req {
 
     builder& builder::set_key_usage_ext(std::string_view const& usagestr, bool critical)
     {
-        ossl::owned<X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_key_usage, usagestr.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create new X.509 certicate request keyUsage extension object.");
-
-        if (critical)
-        {
-            if (!X509_EXTENSION_set_critical(ext.get(), 1))
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                    "Failed to set X.509 certicate request keyUsage extension as critical.");
-        }
-
+        auto ext = x509_extension::make_key_usage(usagestr, critical);
         _::add_extension(_exts, std::move(ext));
-
         return *this;
     }
 
     builder& builder::set_ext_key_usage_ext(std::string_view const& usagestr, bool critical)
     {
-        ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_ext_key_usage, usagestr.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create new X.509 certicate request extKeyUsage extension object.");
 
-        if (critical)
-        {
-            if (!X509_EXTENSION_set_critical(ext.get(), 1))
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                    "Failed to set X.509 certicate request extKeyUsage extension as critical.");
-        }
-
+        auto ext = x509_extension::make_ext_key_usage(usagestr, critical);
         _::add_extension(_exts, std::move(ext));
         return *this;
     }
 
     builder& builder::set_subject_alt_names_ext(owned<STACK_OF(GENERAL_NAME)> const& altnames)
     {
-        ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_i2d(NID_subject_alt_name, /*crit=*/0, altnames.get()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create OpenSSL subject alt name X.509 extension object.");
-
+        auto ext = x509_extension::make_subject_alt_names(altnames);
         _::add_extension(_exts, std::move(ext));
         return *this;
     }
@@ -107,8 +82,8 @@ namespace x509_req {
         if (_exts != nullptr)
         {
             if (!X509_REQ_add_extensions(_req.get(), _exts.get()))
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR(
-                    "Failed to set X.509 certificate request extensions."); // LCOV_EXCL_LINE
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failed to set X.509 certificate request extensions.");
         }
 
         if (!X509_REQ_set_pubkey(_req.get(), const_cast<::EVP_PKEY*>(key.get())))
@@ -120,7 +95,7 @@ namespace x509_req {
         auto req = std::move(_req);
         reset();
         return req;
-    }
+    } // LCOV_EXCL_LINE
 
 } // namespace x509_req
 } // namespace ossl

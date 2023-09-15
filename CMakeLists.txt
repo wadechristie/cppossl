@@ -77,7 +77,10 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/general_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_extension.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_req_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_req.cpp
@@ -94,7 +97,10 @@ SET(CPPOSSL_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/pem.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/raii.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/stack.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_builder.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_crl_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_crl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_extension.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_name.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_req_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_req.hpp

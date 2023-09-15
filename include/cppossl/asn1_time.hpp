@@ -5,6 +5,7 @@
 #pragma once
 
 #include <chrono>
+#include <ctime>
 
 #include <cppossl/raii.hpp>
 
@@ -16,23 +17,18 @@ namespace asn1_time {
      */
     /**@{*/
 
+    using roref = raii::roref<::ASN1_TIME>;
+    using rwref = raii::rwref<::ASN1_TIME>;
+
     owned<::ASN1_TIME> now();
     owned<::ASN1_TIME> offset(std::chrono::seconds const& from_now);
+
     owned<::ASN1_TIME> from_unix(time_t const& unixts);
+    time_t to_unix(roref time);
 
-    void set_offset(::ASN1_TIME* t, std::chrono::seconds const& from_now);
+    void set_offset(rwref time, std::chrono::seconds const& from_now);
 
-    inline void set_offset(owned<::ASN1_TIME> const& t, std::chrono::seconds const& from_now)
-    {
-        set_offset(t.get(), from_now);
-    }
-
-    void set_unix(::ASN1_TIME* time, time_t const& unixts);
-
-    inline void set_unix(owned<::ASN1_TIME> const& t, time_t const& unixts)
-    {
-        set_unix(t.get(), unixts);
-    }
+    void set_unix(rwref time, time_t const& unixts);
 
     /**@}*/
 
