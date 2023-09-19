@@ -16,7 +16,10 @@ namespace x509_store {
      */
     /**@{*/
 
+    /** @brief X509_STORE readonly reference.*/
     using roref = raii::roref<::X509_STORE>;
+
+    /** @brief X509_STORE readwrite reference.*/
     using rwref = raii::rwref<::X509_STORE>;
 
     owned<::X509_STORE> retain(roref store);

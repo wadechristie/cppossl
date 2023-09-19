@@ -184,7 +184,7 @@ namespace x509 {
         return *this;
     }
 
-    builder& builder::set_subject_alt_names_ext(std::vector<owned<::GENERAL_NAME>> const& altnames)
+    builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
     {
         auto gnames = make<STACK_OF(GENERAL_NAME)>();
         for (auto const& name : altnames)
@@ -195,6 +195,10 @@ namespace x509 {
 
     builder& builder::set_subject_key_id_ext()
     {
+        owned<::EVP_PKEY> const pubkey { X509_get_pubkey(_x509.get()) };
+        if (pubkey == nullptr)
+            CPPOSSL_THROW_ERRNO(EINVAL, "Cannot set subject key identifier extension prior to setting the public key");
+
         X509V3_CTX ctx {};
         X509V3_set_ctx_nodb(&ctx);
         X509V3_set_ctx(&ctx, nullptr, _x509.get(), nullptr, nullptr, 0);
@@ -237,7 +241,10 @@ namespace x509 {
     {
         CPPOSSL_ASSERT(digest != nullptr);
 
-        set_authority_key_id_ext(issuer_cert);
+        owned<::EVP_PKEY> const pubkey { X509_get_pubkey(_x509.get()) };
+        if (pubkey == nullptr)
+            CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key was not set");
+
         set_issuer(X509_get_subject_name(issuer_cert.get()));
 
         if (X509_sign(_x509.get(), const_cast<::EVP_PKEY*>(issuer_key.get()), digest) <= 0)
@@ -250,8 +257,18 @@ namespace x509 {
     {
         CPPOSSL_ASSERT(digest != nullptr);
 
+        owned<::EVP_PKEY> const pubkey { X509_get_pubkey(_x509.get()) };
+        if (pubkey == nullptr)
+        {
+            set_public_key(key);
+        }
+        else
+        {
+            if (!evp_pkey::equal(pubkey, key))
+                CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key does not match selfsigning key");
+        }
+
         set_issuer(X509_get_subject_name(_x509.get()));
-        set_public_key(key);
 
         if (X509_sign(_x509.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 certificate."); // LCOV_EXCL_LINE

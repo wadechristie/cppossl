@@ -19,6 +19,23 @@ openssl_error::openssl_error(int error, char const* msg)
     _msg = std::string { error_str.data() };
 }
 
+openssl_error::openssl_error(int error, char const* msg, uint32_t line, char const* file)
+    : _error(error)
+{
+    std::array<char, 256 + 1> ossl_error_str { 0 };
+    std::array<char, 1024> error_str { 0 };
+    char const* errmsg = ERR_error_string(error, ossl_error_str.data());
+    snprintf(error_str.data(),
+        error_str.size() - 1,
+        "OpenSSL error: %d - %s - %s on line %u in %s",
+        error,
+        errmsg,
+        msg,
+        line,
+        file);
+    _msg = std::string { error_str.data() };
+}
+
 char const* openssl_error::what() const noexcept
 {
     return _msg.c_str();

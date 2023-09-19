@@ -16,9 +16,9 @@ using namespace ossl;
 
 using Catch::Matchers::ContainsSubstring;
 
-TEST_CASE("evp_pkey_t - PEM", "[evp_pkey]")
+TEST_CASE("evp_pkey - PEM", "[evp_pkey]")
 {
-    auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
+    auto const testpemstr = ossl::unittest::rsa_key_one.pem();
 
     SECTION("Load Valid PEM")
     {
@@ -63,9 +63,9 @@ TEST_CASE("evp_pkey_t - PEM", "[evp_pkey]")
     }
 }
 
-TEST_CASE("evp_pkey_t - retain()", "[evp_pkey]")
+TEST_CASE("evp_pkey - retain()", "[evp_pkey]")
 {
-    auto const testpemstr = ossl::unittest::get_test_pkey_data()[0];
+    auto const testpemstr = ossl::unittest::rsa_key_one.pem();
 
     owned<::EVP_PKEY> key;
     REQUIRE_FALSE(key);

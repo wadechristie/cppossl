@@ -17,7 +17,10 @@ namespace x509_crl {
      */
     /**@{*/
 
+    /** @brief X509_CRL readonly reference.*/
     using roref = raii::roref<::X509_CRL>;
+
+    /** @brief X509_CRL readwrite reference.*/
     using rwref = raii::rwref<::X509_CRL>;
 
     /** @brief Retrieve a new reference to the given X.509 CRL object. */

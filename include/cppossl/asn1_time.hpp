@@ -17,8 +17,18 @@ namespace asn1_time {
      */
     /**@{*/
 
+    /** @brief ASN1_TIME readonly reference.*/
     using roref = raii::roref<::ASN1_TIME>;
+
+    /** @brief ASN1_TIME readwrite reference.*/
     using rwref = raii::rwref<::ASN1_TIME>;
+
+    int cmp(roref left, roref right);
+
+    inline bool equal(roref left, roref right)
+    {
+        return cmp(left, right) == 0;
+    }
 
     owned<::ASN1_TIME> now();
     owned<::ASN1_TIME> offset(std::chrono::seconds const& from_now);

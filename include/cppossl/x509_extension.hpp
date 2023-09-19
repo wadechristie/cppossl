@@ -10,6 +10,11 @@
 namespace ossl {
 namespace x509_extension {
 
+    /**
+     * @brief Create a X.509 basicConstraints extension object.
+     *
+     * @throws ossl::openssl_error
+     */
     owned<::X509_EXTENSION> make_basic_constaints(bool ca, int pathlen = -1);
 
     owned<::X509_EXTENSION> make_basic_constaints(std::string_view const& confstr);
@@ -18,6 +23,11 @@ namespace x509_extension {
 
     owned<::X509_EXTENSION> make_ext_key_usage(std::string_view const& confstr, bool critical);
 
+    /**
+     * @brief Create a X.509 subjectAltName extension object.
+     *
+     * @throws ossl::openssl_error
+     */
     owned<::X509_EXTENSION> make_subject_alt_names(raii::roref<STACK_OF(GENERAL_NAME)> altnames);
 
     owned<::X509_EXTENSION> make_authority_key_id(ossl::x509::roref cacert);

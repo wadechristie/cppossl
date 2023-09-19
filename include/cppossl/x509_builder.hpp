@@ -6,8 +6,8 @@
 
 #include <chrono>
 #include <functional>
+#include <initializer_list>
 #include <string_view>
-#include <vector>
 
 #include "cppossl/general_name.hpp"
 #include <cppossl/asn1_time.hpp>
@@ -134,7 +134,7 @@ namespace x509 {
          *
          * @throws ossl::openssl_error
          */
-        builder& set_subject_alt_names_ext(std::vector<owned<::GENERAL_NAME>> const& altnames);
+        builder& set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames);
 
         /**
          * @brief Add the subjectKeyIdentifier extension to the certificate.

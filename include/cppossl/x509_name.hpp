@@ -4,6 +4,7 @@
 //
 #pragma once
 
+#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -19,13 +20,47 @@ namespace x509_name {
      */
     /**@{*/
 
+    /** @brief X509_NAME readonly reference.*/
     using roref = raii::roref<::X509_NAME>;
+
+    /** @brief X509_NAME read/write reference.*/
     using rwref = raii::rwref<::X509_NAME>;
 
+    /**
+     * @brief Compare to X509_NAME objects.  Returns -1, 0, or 1 is object a is
+     * less than, equals, or is greater than object b.
+     *
+     * @throws ossl::openssl_error
+     */
+    int cmp(roref left, roref right);
+
+    /** @brief Determine is two X509_NAME objects are equal. */
+    inline bool equal(roref left, roref right)
+    {
+        return cmp(left, right) == 0;
+    }
+
+    /** @brief Print X509_NAME text to a c++ string. */
     std::string print_text(roref name);
 
+    /**
+     * @brief Print X509_NAME text to a c++ string.
+     *
+     * @see X509_NAME_print_ex()
+     */
+    std::string print_text(roref name, int flags);
+
+    /** @brief Print X509_NAME text to the given BIO object. */
     void print_text(bio const& bio, roref name);
 
+    /**
+     * @brief Print X509_NAME text to the given BIO object.
+     *
+     * @see X509_NAME_print_ex()
+     */
+    void print_text(bio const& bio, roref name, int flags);
+
+    /** @brief Attempt to parse an X509_NAME from the given string. */
     owned<::X509_NAME> parse_name(std::string_view const& str);
 
     /**
@@ -141,6 +176,8 @@ namespace x509_name {
      * @throws ossl::openssl_error
      */
     void set_domain_components(rwref name, std::vector<std::string> const& value);
+
+    owned<::X509_NAME> build(std::function<void(owned<::X509_NAME>&)> callback);
 
     /**@}*/
 

@@ -30,7 +30,7 @@ namespace x509_extension {
                 "Failed to create X.509 basicConstraints extension object.");
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
     owned<::X509_EXTENSION> make_key_usage(std::string_view const& usagestr, bool critical)
     {
@@ -47,7 +47,8 @@ namespace x509_extension {
         }
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
+
     owned<::X509_EXTENSION> make_ext_key_usage(std::string_view const& usagestr, bool critical)
     {
         ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_ext_key_usage, usagestr.data()) };
@@ -63,7 +64,7 @@ namespace x509_extension {
         }
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
     owned<::X509_EXTENSION> make_subject_alt_names(raii::roref<STACK_OF(GENERAL_NAME)> altnames)
     {
@@ -74,7 +75,7 @@ namespace x509_extension {
                 "Failed to create X.509 subjectAltName extension object.");
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
     owned<::X509_EXTENSION> make_authority_key_id(ossl::x509::roref cacert)
     {
@@ -90,7 +91,7 @@ namespace x509_extension {
                 "Failed to create X.509 authorityKeyIdentifier extension object.");
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
     owned<::X509_EXTENSION> make_crl_distribution_point(raii::roref<STACK_OF(DIST_POINT)> crldists)
     {
@@ -102,7 +103,7 @@ namespace x509_extension {
                 "Failed to create X.509 crlDistributionPoints extension to X.509 object.");
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
     owned<::X509_EXTENSION> make_authority_access_info(std::string_view const& accessinfo)
     {
@@ -112,7 +113,7 @@ namespace x509_extension {
                 "Failed to create X.509 authorityAccessInfo extension object.");
 
         return ext;
-    }
+    } // LCOV_EXCL_LINE
 
 } // namespace x509_extension
 } // namespace ossl

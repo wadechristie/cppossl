@@ -12,21 +12,27 @@
 #include <openssl/err.h>
 
 #define CPPOSSL_THROW_ERRNO(err, msg) throw std::system_error(err, std::system_category(), msg)
+#ifndef NDEBUG
+#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg) throw ::ossl::openssl_error(ERR_get_error(), msg, __LINE__, __FILE__)
+#else
 #define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg) throw ::ossl::openssl_error(ERR_get_error(), msg)
+#endif
 
 /** @brief Abort. */
 #define CPPOSSL_ABORT(...) assert(false)
 
 /** @brief Assertion. */
 #define CPPOSSL_ASSERT(expr, ...) \
-    do {                          \
+    do                            \
+    {                             \
         assert(expr);             \
     } while (0)
 
 #ifndef NDEBUG
 /** @brief Debug assertion. */
 #define CPPOSSL_DASSERT(expr, ...) \
-    do {                           \
+    do                             \
+    {                              \
         assert(expr);              \
     } while (0)
 #else
@@ -41,9 +47,11 @@ namespace ossl {
 /**@{*/
 
 /** @brief OpenSSL exception type. */
-class openssl_error : public std::exception {
+class openssl_error : public std::exception
+{
 public:
     openssl_error(int error, char const* msg);
+    openssl_error(int error, char const* msg, uint32_t line, char const* file);
 
     openssl_error(openssl_error&&) = default;
     openssl_error& operator=(openssl_error&&) = default;

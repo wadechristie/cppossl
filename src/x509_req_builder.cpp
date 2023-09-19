@@ -66,7 +66,7 @@ namespace x509_req {
         return *this;
     }
 
-    builder& builder::set_subject_alt_names_ext(std::vector<owned<::GENERAL_NAME>> const& altnames)
+    builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
     {
         auto gnames = ossl::make<STACK_OF(GENERAL_NAME)>();
         for (auto const& name : altnames)

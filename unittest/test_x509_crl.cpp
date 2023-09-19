@@ -29,7 +29,7 @@ std::string const testpemstr = "-----BEGIN X509 CRL-----\n"
 
 } // namespace
 
-TEST_CASE("Load CRL", "[crl]")
+TEST_CASE("Load CRL", "[crl][pem]")
 {
 
     SECTION("Valid PEM String")
@@ -45,7 +45,7 @@ TEST_CASE("Load CRL", "[crl]")
     }
 }
 
-TEST_CASE("Pemify CRL", "[crl]")
+TEST_CASE("Convert CRL to PEM", "[crl][pem]")
 {
     auto crl = pem::load<::X509_CRL>(testpemstr);
     REQUIRE(pem::to_pem_string(crl) == testpemstr);

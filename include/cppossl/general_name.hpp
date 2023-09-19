@@ -18,7 +18,10 @@ namespace general_name {
      */
     /**@{*/
 
+    /** @brief GENERAL_NAME readonly reference.*/
     using roref = raii::roref<::GENERAL_NAME>;
+
+    /** @brief GENERAL_NAME readwrite reference.*/
     using rwref = raii::rwref<::GENERAL_NAME>;
 
     owned<::GENERAL_NAME> copy(roref name);

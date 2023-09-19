@@ -5,6 +5,8 @@
 
 #include <array>
 
+#include <cppossl/pem.hpp>
+
 #include "common.hpp"
 
 namespace ossl {
@@ -101,9 +103,19 @@ namespace unittest {
 
     } // namespace _
 
-    std::vector<std::string> get_test_pkey_data()
+    // std::vector<std::string> get_test_pkey_data()
+    // {
+    //     return std::vector<std::string> { _::static_keys.begin(), _::static_keys.end() };
+    // }
+
+    std::string test_pkey::pem() const
     {
-        return std::vector<std::string> { _::static_keys.begin(), _::static_keys.end() };
+        return std::string { _::static_keys.at(index) };
+    }
+
+    owned<::EVP_PKEY> test_pkey::load() const
+    {
+        return pem::load<::EVP_PKEY>(pem());
     }
 
 } // namespace  unittest

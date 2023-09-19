@@ -18,7 +18,10 @@ namespace x509 {
      */
     /**@{*/
 
+    /** @brief X509 readonly reference.*/
     using roref = raii::roref<::X509>;
+
+    /** @brief X509 readwrite reference.*/
     using rwref = raii::rwref<::X509>;
 
     /** @brief Retrieve a new reference to the given X.509 object. */
@@ -39,10 +42,13 @@ namespace x509 {
     /** @brief Get certificate notAfter timestamp. */
     time_t get_not_after(roref x509);
 
+    /** @brief Get raw certificate serial number. */
     ossl::owned<::ASN1_INTEGER> get_serial_number(roref x509);
 
+    /** @brief Get certificate serial number as BIGNUM. */
     ossl::owned<::BIGNUM> get_serial_number_bn(roref x509);
 
+    /** @brief Get certificate serial number as a hex encoded string. */
     std::string get_serial_number_hex(roref x509);
 
     /** @brief Return true if the given private key matches the given X.509 certificate. */

@@ -13,12 +13,13 @@
 namespace ossl {
 namespace evp_pkey {
 
-    using roref = raii::roref<::EVP_PKEY>;
-
     /**
      * \defgroup evp_pkey OpenSSL EVP_PKEY
      */
     /**@{*/
+
+    /** @brief EVP_PKEY readonly reference.*/
+    using roref = raii::roref<::EVP_PKEY>;
 
     /** @brief Retrieve a new reference to the given private key object. */
     owned<::EVP_PKEY> retain(roref key);

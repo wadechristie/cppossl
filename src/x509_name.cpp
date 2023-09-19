@@ -11,13 +11,13 @@ namespace x509_name {
 
     namespace _ {
 
-        static void x509_name_print_text(bio const& bio, ::X509_NAME const* name)
+        static void x509_name_print_text(bio const& bio, ::X509_NAME const* name, int const& flags)
         {
-            if (X509_NAME_print_ex(bio, const_cast<X509_NAME*>(name), 0, XN_FLAG_ONELINE) <= 0)
+            if (X509_NAME_print_ex(bio, const_cast<X509_NAME*>(name), 0, flags) <= 0)
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to print X509_NAME object to text."); // LCOV_EXCL_LINE
         } // LCOV_EXCL_LINE
 
-        void x509_name_remove_all_by_nid(::X509_NAME* name, int const nid)
+        void x509_name_remove_all_by_nid(::X509_NAME* name, int const& nid)
         {
             for (int pos = -1; (pos = X509_NAME_get_index_by_NID(name, nid, pos)) >= 0; pos = -1)
             {
@@ -61,8 +61,8 @@ namespace x509_name {
                     /*loc=*/-1,
                     /*set=*/(first ? 0 : 1));
                 if (rc == 0)
-                    CPPOSSL_THROW_LAST_OPENSSL_ERROR(
-                        "Failed to add a new entry to X509_NAME object."); // LCOV_EXCL_LINE
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                        "Failed to add a new entry to X509_NAME object.");
                 first = false;
             }
         }
@@ -114,15 +114,34 @@ namespace x509_name {
 
     } // _ namespace
 
+    int cmp(roref left, roref right)
+    {
+        auto const result = X509_NAME_cmp(left.get(), right.get());
+        if (result == -2)
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                "Encountered an error while attempting to compare two OpenSSL X509_NAME objects.");
+        return result;
+    }
+
     void print_text(bio const& bio, roref name)
     {
-        _::x509_name_print_text(bio, name.get());
+        print_text(bio, name.get(), XN_FLAG_ONELINE);
+    }
+
+    void print_text(bio const& bio, roref name, int flags)
+    {
+        _::x509_name_print_text(bio, name.get(), flags);
     }
 
     std::string print_text(roref name)
     {
+        return print_text(name, XN_FLAG_ONELINE);
+    }
+
+    std::string print_text(roref name, int flags)
+    {
         buffered_bio bio;
-        print_text(bio, name);
+        print_text(bio, name, flags);
         return bio.str();
     }
 
@@ -131,7 +150,7 @@ namespace x509_name {
         std::string str;
         (void)_::x509_name_get_nid(name.get(), NID_commonName, str);
         return str;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_common_name(rwref name, std::string_view const& value)
     {
@@ -143,7 +162,7 @@ namespace x509_name {
         std::string str;
         (void)_::x509_name_get_nid(name.get(), NID_localityName, str);
         return str;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_locality(rwref name, std::string_view const& value)
     {
@@ -155,7 +174,7 @@ namespace x509_name {
         std::string str;
         (void)_::x509_name_get_nid(name.get(), NID_stateOrProvinceName, str);
         return str;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_state(rwref name, std::string_view const& value)
     {
@@ -167,7 +186,7 @@ namespace x509_name {
         std::string str;
         (void)_::x509_name_get_nid(name.get(), NID_countryName, str);
         return str;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_country(rwref name, std::string_view const& value)
     {
@@ -181,7 +200,7 @@ namespace x509_name {
         std::vector<std::string> names;
         (void)_::x509_name_get_nid(name.get(), NID_streetAddress, names);
         return names;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_street_address(rwref name, std::vector<std::string> const& value)
     {
@@ -193,7 +212,7 @@ namespace x509_name {
         std::vector<std::string> names;
         (void)_::x509_name_get_nid(name.get(), NID_organizationName, names);
         return names;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_organization_name(rwref name, std::vector<std::string> const& value)
     {
@@ -205,7 +224,7 @@ namespace x509_name {
         std::vector<std::string> names;
         (void)_::x509_name_get_nid(name.get(), NID_organizationalUnitName, names);
         return names;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_organization_unit_name(rwref name, std::vector<std::string> const& value)
     {
@@ -217,12 +236,19 @@ namespace x509_name {
         std::vector<std::string> names;
         (void)_::x509_name_get_nid(name.get(), NID_domainComponent, names);
         return names;
-    }
+    } // LCOV_EXCL_LINE
 
     void set_domain_components(rwref name, std::vector<std::string> const& value)
     {
         _::x509_name_add_by_nid(name.get(), NID_domainComponent, value);
     }
+
+    owned<::X509_NAME> build(std::function<void(owned<::X509_NAME>&)> callback)
+    {
+        auto name = make<::X509_NAME>();
+        callback(name);
+        return name;
+    } // LCOV_EXCL_LINE
 
 } // namespace x509_name
 } // namespace ossl

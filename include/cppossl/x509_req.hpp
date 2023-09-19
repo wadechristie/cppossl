@@ -19,7 +19,10 @@ namespace x509_req {
      */
     /**@{*/
 
+    /** @brief X509_REQ readonly reference.*/
     using roref = raii::roref<::X509_REQ>;
+
+    /** @brief X509_REQ readwrite reference.*/
     using rwref = raii::rwref<::X509_REQ>;
 
     /** @brief Return the X.509 parsed subject principal. */

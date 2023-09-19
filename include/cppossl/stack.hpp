@@ -9,13 +9,12 @@
 #include <cppossl/raii.hpp>
 
 namespace ossl {
-
-/**
- * \defgroup stack OpenSSL Stack Helpers
- */
-/**@{*/
-
 namespace stack {
+
+    /**
+     * \defgroup stack OpenSSL Stack Helpers
+     */
+    /**@{*/
 
     template <typename StackT>
     raii::owned<StackT> make()
@@ -67,8 +66,7 @@ namespace stack {
         };
     }
 
+    /**@}*/
+
 } // namespace stack
-
-/**@}*/
-
 } // namespace ossl
