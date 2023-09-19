@@ -19,4 +19,4 @@ SET(PEMFINDER_EXAMPLE_SRC
 add_executable(pemfinder ${PEMFINDER_EXAMPLE_SRC})
 target_compile_features(pemfinder PUBLIC cxx_std_17)
 target_compile_options(pemfinder PRIVATE -Wall -Werror)
-target_link_libraries(pemfinder certify lyra)
+target_link_libraries(pemfinder cppossl lyra)
