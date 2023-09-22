@@ -1,0 +1,53 @@
+PROJECT_NAME            = "CPPOSSL"
+PROJECT_BRIEF           = "C++ utility library for OpenSSL"
+USE_MDFILE_AS_MAINPAGE  = @CMAKE_CURRENT_SOURCE_DIR@/docs/README.md
+
+
+OUTPUT_DIRECTORY        = @CMAKE_CURRENT_BINARY_DIR@/doxygen/
+INPUT                   = @CMAKE_CURRENT_SOURCE_DIR@/src/ @CMAKE_CURRENT_SOURCE_DIR@/include/ @CMAKE_CURRENT_SOURCE_DIR@/docs @CMAKE_CURRENT_SOURCE_DIR@/vendor/cppossl/src/ @CMAKE_CURRENT_SOURCE_DIR@/vendor/cppossl/include/
+
+HTML_EXTRA_STYLESHEET   = @CMAKE_CURRENT_SOURCE_DIR@/docs/doxygen-awesome.css @CMAKE_CURRENT_SOURCE_DIR@/docs/doxygen-awesome-sidebar-only.css @CMAKE_CURRENT_SOURCE_DIR@/docs/custom.css
+HTML_HEADER             = @CMAKE_CURRENT_SOURCE_DIR@/docs/header.html
+HTML_COLORSTYLE         = LIGHT
+
+
+FILE_PATTERNS   = *.h \
+                  *.hpp \
+                  *.c \
+                  *.cpp \
+                  *.md
+
+RECURSIVE       = YES
+
+# Color style
+HTML_COLORSTYLE_HUE     = 220
+HTML_COLORSTYLE_SAT     = 40
+HTML_COLORSTYLE_GAMMA   = 80
+
+HAVE_DOT                = YES
+CALL_GRAPH              = NO
+CALLER_GRAPH            = NO
+
+GRAPHICAL_HIERARCHY     = YES
+DIRECTORY_GRAPH         = YES
+GENERATE_LEGEND         = YES
+INCLUDED_BY_GRAPH       = YES
+INCLUDE_GRAPH           = YES
+DOT_IMAGE_FORMAT        = png:cairo:cairo
+
+EXTRACT_ALL             = YES
+EXTRACT_STATIC          = YES
+EXTRACT_PRIVATE         = YES
+
+GENERATE_LATEX          = NO
+USE_PDFLATEX            = NO
+
+BUILTIN_STL_SUPPORT     = YES
+
+SOURCE_BROWSER          = YES
+STRIP_CODE_COMMENTS     = NO
+
+GENERATE_TREEVIEW       = YES
+DISABLE_INDEX           = NO
+FULL_SIDEBAR            = NO
+SEPARATE_MEMBER_PAGES   = NO

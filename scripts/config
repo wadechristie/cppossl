@@ -1,0 +1,14 @@
+#!/bin/bash
+
+PROJECT_DIR="$(pwd)"
+
+BUILD_DIR="${PROJECT_DIR}/_build"
+STAGE_DIR="${PROJECT_DIR}/_stage"
+COV_DIR="${PROJECT_DIR}/_coverage"
+UNITTEST_DIR="${PROJECT_DIR}/unittest"
+
+GCC_C="gcc-11"
+GCC_CXX="g++-11"
+
+CLANG_C="clang-15"
+CLANG_CXX="clang++-15"

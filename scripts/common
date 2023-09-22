@@ -1,0 +1,15 @@
+#!/bin/bash
+
+function die()
+{
+    echo "$@" >&2
+    exit 1
+}
+
+function header()
+{
+    python3 -c 'print("#" * 80)'
+    echo -n "# "
+    echo "$@"
+    python3 -c 'print("#" * 80)'
+}

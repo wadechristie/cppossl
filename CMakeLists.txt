@@ -21,11 +21,14 @@ endif()
 
 if(${MAIN_PROJECT})
     set(CPPOSSL_BuildTests_INIT         ON)
+    set(CPPOSSL_BuildDocs_INIT          ON)
 else()
     set(CPPOSSL_BuildTests_INIT         OFF)
+    set(CPPOSSL_BuildDocs_INIT          OFF)
 endif()
 
 option(CPPOSSL_BuildTests       "Build the unittests."          ${CPPOSSL_BuildTests_INIT})
+option(CPPOSSL_BuildDocs        "Build the documentation."      ${CPPOSSL_BuildDocs_INIT})
 option(CPPOSSL_BuildTools       "Build the tools directory."    ON)
 option(CPPOSSL_UseASAN          "Build w/ address sanitizer."   OFF)
 option(CPPOSSL_UseGcov          "Build w/ code coverage."       OFF)
@@ -156,4 +159,30 @@ endif()
 
 if (CPPOSSL_BuildTools)
     add_subdirectory(tools)
+endif()
+
+##
+## Docs
+##
+
+if (CPPOSSL_BuildDocs)
+    find_package(Doxygen)
+    if (DOXYGEN_FOUND)
+        # set input and output files
+        set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/docs/Doxyfile.in)
+        set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+        # request to configure the file
+        configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+        message("Doxygen build started")
+
+        # note the option ALL which allows to build the docs together with the application
+        add_custom_target(docs
+            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            VERBATIM)
+    else (DOXYGEN_FOUND)
+        message("Doxygen need to be installed to generate the doxygen documentation")
+    endif (DOXYGEN_FOUND)
 endif()
