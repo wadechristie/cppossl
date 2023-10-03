@@ -123,3 +123,64 @@ TEST_CASE("X.509 Name", "[x509][x509_name]")
                " University Athletics, DC = wsustadium, DC = com");
     }
 }
+
+TEST_CASE("X.509 Name - Parse", "[x509][x509_name]")
+{
+    SECTION("Valid Name")
+    {
+        std::string const common_name = "Martin Stadium";
+        std::string const locality = "Pullman";
+        std::string const state = "Washington";
+        std::string const country = "US";
+        std::vector<std::string> const street_address {
+            "1775 NE Stadium Way",
+        };
+        std::vector<std::string> const org_name {
+            "Washington State University",
+        };
+        std::vector<std::string> const org_unit_name {
+            "Washington State University Athletics",
+        };
+        std::vector<std::string> const domain_components {
+            "wsustadium",
+            "com",
+        };
+
+        auto const namestr = "CN = Martin Stadium, L = Pullman, ST = Washington, C = US, street = 1775 NE"
+                             " Stadium Way, O = \"Washington State University\", OU = Washington State"
+                             " University Athletics, DC = wsustadium, DC = com";
+
+        ossl::owned<::X509_NAME> name;
+        REQUIRE_NOTHROW(name = ossl::x509_name::parse(namestr));
+        REQUIRE(name);
+
+        REQUIRE(ossl::x509_name::get_common_name(name) == common_name);
+        REQUIRE(ossl::x509_name::get_locality(name) == locality);
+        REQUIRE(ossl::x509_name::get_state(name) == state);
+        REQUIRE(ossl::x509_name::get_country(name) == country);
+        REQUIRE_THAT(ossl::x509_name::get_street_address(name), Catch::Matchers::UnorderedEquals(street_address));
+        REQUIRE_THAT(ossl::x509_name::get_organization_name(name), Catch::Matchers::UnorderedEquals(org_name));
+        REQUIRE_THAT(
+            ossl::x509_name::get_organization_unit_name(name), Catch::Matchers::UnorderedEquals(org_unit_name));
+        REQUIRE_THAT(ossl::x509_name::get_domain_components(name), Catch::Matchers::UnorderedEquals(domain_components));
+        REQUIRE(ossl::x509_name::print_text(name)
+            == "CN = Martin Stadium, L = Pullman, ST = Washington, C = US, street = 1775 NE"
+               " Stadium Way, O = Washington State University, OU = Washington State"
+               " University Athletics, DC = wsustadium, DC = com");
+    }
+
+    SECTION("Invalid Component")
+    {
+        REQUIRE_THROWS_AS(ossl::x509_name::parse("CN = Martin Stadium, Pullman, WA"), std::system_error);
+    }
+
+    SECTION("Invalid Component Type")
+    {
+        REQUIRE_THROWS_AS(ossl::x509_name::parse("CN = Martin Stadium, oops = Pullman"), std::system_error);
+
+        auto const invalidquoted = "CN = Martin Stadium, L = Pullman, ST = Washington, C = US, street = 1775 NE"
+                                   " Stadium Way, O = \"Washington State University, OU = Washington State"
+                                   " University Athletics, DC = wsustadium, DC = com";
+        REQUIRE_THROWS_AS(ossl::x509_name::parse(invalidquoted), std::system_error);
+    }
+}

@@ -61,7 +61,7 @@ namespace x509_name {
     void print_text(bio const& bio, roref name, int flags);
 
     /** @brief Attempt to parse an X509_NAME from the given string. */
-    owned<::X509_NAME> parse_name(std::string_view const& str);
+    owned<::X509_NAME> parse(std::string const& str);
 
     /**
      * @brief Get X509_NAME common name.
