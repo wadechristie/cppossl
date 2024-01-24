@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.18)
 ## PROJECT
 ##
 
-project(cppossl VERSION 1.0.1 LANGUAGES CXX C)
+project(cppossl VERSION 1.0.2 LANGUAGES CXX C)
 
 ##
 ## MAIN_PROJECT CHECK

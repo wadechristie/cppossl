@@ -67,8 +67,8 @@ TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Add Certificates", 
     {
         std::stringstream ss;
         ss << "Child Cert " << i;
-        certs.push_back(x509::sign(
-            signing_cert, signing_key, unittest::default_digest(), [this, &childkey, &ss](x509::builder& builder) {
+        certs.push_back(
+            x509::sign(signing_cert, signing_key, unittest::default_digest(), [&childkey, &ss](x509::builder& builder) {
                 builder.set_subject(name(ss.str())).set_public_key(childkey).set_authority_key_id_ext(signing_cert);
             }));
         builder.add(

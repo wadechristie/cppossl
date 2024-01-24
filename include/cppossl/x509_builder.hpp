@@ -50,8 +50,8 @@ namespace x509 {
         builder(builder&&) noexcept = default;
         builder& operator=(builder&&) noexcept = default;
 
-        builder(builder const&) noexcept = default;
-        builder& operator=(builder const&) noexcept = default;
+        builder(builder const&) noexcept = delete;
+        builder& operator=(builder const&) noexcept = delete;
 
         ~builder() noexcept = default;
 

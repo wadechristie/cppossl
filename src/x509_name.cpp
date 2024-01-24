@@ -15,7 +15,6 @@ namespace x509_name {
 
         std::string_view trim(std::string_view const& str)
         {
-            std::string_view result;
             char const* left = str.begin();
             for (;; ++left)
             {
