@@ -114,7 +114,9 @@ SET(CPPOSSL_INC
 add_library(cppossl ${CPPOSSL_INC} ${CPPOSSL_SRC})
 add_library(cppossl::cppossl ALIAS cppossl)
 target_compile_features(cppossl PUBLIC cxx_std_17)
-target_compile_options(cppossl PRIVATE -Wall -Werror)
+target_compile_options(cppossl PRIVATE -Wall -Werror -Wextra -Wformat=2
+    -Wno-unused-parameter -Wshadow -Wwrite-strings -Wredundant-decls
+    -Wmissing-include-dirs)
 target_link_libraries(cppossl PUBLIC crypto)
 
 target_include_directories(cppossl

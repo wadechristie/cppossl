@@ -161,10 +161,10 @@ bio bio::from_fd(int fd)
     return bio { std::move(fdbio) };
 } // LCOV_EXCL_LINE
 
-void bio::push(bio_filter bio)
+void bio::push(bio_filter b)
 {
-    std::swap(_bio, bio._bio);
-    BIO_push(_bio.get(), bio._bio.release());
+    std::swap(_bio, b._bio);
+    BIO_push(_bio.get(), b._bio.release());
 }
 
 int bio::write(void const* data, size_t const& length)

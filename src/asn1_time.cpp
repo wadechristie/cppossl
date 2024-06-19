@@ -42,7 +42,7 @@ namespace asn1_time {
 
     time_t to_unix(roref in)
     {
-        ::tm t { 0 };
+        ::tm t {};
         if (ASN1_TIME_to_tm(in.get(), &t) != 1)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to parse ASN1_TIME to tm struct."); // LCOV_EXCL_LINE
         return timegm(&t);

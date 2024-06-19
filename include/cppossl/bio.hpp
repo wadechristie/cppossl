@@ -113,8 +113,8 @@ public:
 protected:
     bio() noexcept = default;
 
-    inline explicit bio(owned<::BIO> bio) noexcept
-        : _bio(std::move(bio))
+    inline explicit bio(owned<::BIO> b) noexcept
+        : _bio(std::move(b))
     {
     }
 
