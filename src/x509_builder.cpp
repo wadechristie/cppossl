@@ -166,6 +166,13 @@ namespace x509 {
         return *this;
     }
 
+    builder& builder::set_key_usage_ext(raii::roref<::ASN1_BIT_STRING> usage, bool critical)
+    {
+        auto const ext = x509_extension::make_key_usage(usage, critical);
+        _::add_extension(_x509, ext);
+        return *this;
+    }
+
     builder& builder::set_ext_key_usage_ext(std::string_view const& usagestr, bool critical)
     {
         auto const ext = x509_extension::make_ext_key_usage(usagestr, critical);

@@ -5,6 +5,7 @@
 
 #include <sstream>
 
+#include "cppossl/der.hpp"
 #include "cppossl/x509_extension.hpp"
 
 namespace ossl {
@@ -45,6 +46,18 @@ namespace x509_extension {
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
                     "Failed to set X.509 keyUsage extension as critical.");
         }
+
+        return ext;
+    } // LCOV_EXCL_LINE
+
+    owned<::X509_EXTENSION> make_key_usage(raii::roref<::ASN1_BIT_STRING> usage, bool critical)
+    {
+        raii::owned<::ASN1_OCTET_STRING> data = der::encode(usage).to_octet_string();
+        ossl::owned<X509_EXTENSION> ext { X509_EXTENSION_create_by_NID(nullptr, NID_key_usage, critical, data.get()) };
+        assert(ext);
+        if (ext == nullptr)
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                "Failed to create X.509 keyUsage extension object.");
 
         return ext;
     } // LCOV_EXCL_LINE

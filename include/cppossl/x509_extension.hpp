@@ -21,6 +21,8 @@ namespace x509_extension {
 
     owned<::X509_EXTENSION> make_key_usage(std::string_view const& confstr, bool critical);
 
+    owned<::X509_EXTENSION> make_key_usage(raii::roref<::ASN1_BIT_STRING> usage, bool critical);
+
     owned<::X509_EXTENSION> make_ext_key_usage(std::string_view const& confstr, bool critical);
 
     /**

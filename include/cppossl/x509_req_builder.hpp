@@ -61,6 +61,14 @@ namespace x509_req {
         builder& set_key_usage_ext(std::string_view const& usagestr, bool critical = false);
 
         /**
+         * @brief Add the keyUsage extension to the X.509 certificate.
+         *
+         * @param[in] usage A set of usage flags.
+         * @throws ossl::openssl_error
+         */
+        builder& set_key_usage_ext(raii::roref<::ASN1_BIT_STRING> usage, bool critical = false);
+
+        /**
          * @brief Add the extKeyUsage extension to the X.509 certificate.
          *
          * @param[in] ext_usage a set of ext usage flags.
