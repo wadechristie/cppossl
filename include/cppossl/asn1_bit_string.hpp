@@ -4,6 +4,7 @@
 //
 #pragma once
 
+#include <cppossl/asn1_string.hpp>
 #include <cppossl/raii.hpp>
 
 namespace ossl {
@@ -20,6 +21,11 @@ namespace asn1 {
 
         /** @brief ASN1_BIT_STRING readwrite reference.*/
         using rwref = raii::rwref<::ASN1_BIT_STRING>;
+
+        inline owned<::ASN1_BIT_STRING> make()
+        {
+            return ossl::make<asn1::BIT_STRING>();
+        }
 
         void set_bit(rwref bitstr, uint8_t index, bool value);
 

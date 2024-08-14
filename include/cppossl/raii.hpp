@@ -289,6 +289,7 @@ using owned = raii::owned<T>;
 template <typename T, typename... ArgsT>
 raii::owned<T> make(ArgsT&&... args)
 {
+    static_assert(!std::is_same<T, ::asn1_string_st>::value);
     return raii::owned<T> { raii::traits<T>::newfn(std::forward<ArgsT>(args)...) };
 }
 

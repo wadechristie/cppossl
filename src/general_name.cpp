@@ -16,7 +16,7 @@ namespace general_name {
 
         static owned<::GENERAL_NAME> make_ia5(int type, std::string_view const& name)
         {
-            auto ia5str = make<::ASN1_IA5STRING>();
+            auto ia5str = make<asn1::IA5STRING>();
             if (!ASN1_STRING_set(ia5str.get(), name.data(), name.size()))
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set alternate name IA5 value."); // LCOV_EXCL_LINE
 

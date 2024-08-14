@@ -8,6 +8,7 @@
 
 #include <string_view>
 
+#include <cppossl/asn1_string.hpp>
 #include <cppossl/raii.hpp>
 
 namespace ossl {

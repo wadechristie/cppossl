@@ -11,6 +11,7 @@
 
 #include <openssl/ocsp.h>
 
+#include <cppossl/asn1_string.hpp>
 #include <cppossl/asn1_time.hpp>
 #include <cppossl/evp_pkey.hpp>
 #include <cppossl/x509.hpp>

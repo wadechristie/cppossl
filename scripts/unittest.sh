@@ -19,6 +19,7 @@ function show_usage()
 EXTRA_PARAMS=()
 BUILD_PARAMS=()
 DO_GDB="no"
+DO_VG="no"
 TSUITE="${BUILD_DIR}/unittest/cppossl-unittest"
 
 while (( "$#" )); do
@@ -30,6 +31,10 @@ while (( "$#" )); do
         --gdb)
             DO_GDB="yes"
             EXTRA_PARAMS=("${EXTRA_PARAMS[@]}" "--break")
+            shift
+            ;;
+        --valgrind)
+            DO_VG="yes"
             shift
             ;;
         --help)
@@ -48,6 +53,9 @@ done
 if [[ 'yes' == "${DO_GDB}" ]]
 then
     gdb --args "${TSUITE}" "${EXTRA_PARAMS[@]}"
+elif [[ 'yes' == "${DO_VG}" ]]
+then
+    valgrind --leak-check=full "${TSUITE}" "${EXTRA_PARAMS[@]}"
 else
     "${TSUITE}" "${EXTRA_PARAMS[@]}"
 fi

@@ -16,8 +16,9 @@ using namespace ossl;
 TEST_CASE("asn1::bit_string", "[asn1_bit_string]")
 {
     owned<::ASN1_BIT_STRING> bits;
-    REQUIRE_NOTHROW(bits = make<::ASN1_BIT_STRING>());
+    REQUIRE_NOTHROW(bits = asn1::bit_string::make());
     REQUIRE(bits);
+    REQUIRE(bits->type == V_ASN1_BIT_STRING);
 
     REQUIRE_FALSE(asn1::bit_string::is_set(bits, 0));
     REQUIRE_FALSE(asn1::bit_string::is_set(bits, 1));

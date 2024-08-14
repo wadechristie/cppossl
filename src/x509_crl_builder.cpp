@@ -48,7 +48,7 @@ namespace x509_crl {
 
     builder& builder::add(ossl::x509::roref cert, asn1::time::roref revocation_time, int reason)
     {
-        auto tmp = make<::ASN1_ENUMERATED>();
+        auto tmp = make<asn1::ENUMERATED>();
         if (tmp == nullptr || !ASN1_ENUMERATED_set(tmp.get(), reason))
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to created CRL revocation reason object."); // LCOV_EXCL_LINE
         return add(cert, revocation_time, tmp.get());
