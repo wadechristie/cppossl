@@ -32,7 +32,7 @@ namespace x509_req {
         auto req = make<::X509_REQ>();
 
         if (!X509_REQ_set_version(req.get(), X509_REQ_VERSION_1))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate request version."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate request version."); // LCOV_EXCL_LINE
 
         _req = std::move(req);
     }
@@ -40,7 +40,7 @@ namespace x509_req {
     builder& builder::set_subject(ossl::x509_name::roref name)
     {
         if (!X509_REQ_set_subject_name(_req.get(), name.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate request subject."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate request subject."); // LCOV_EXCL_LINE
         return *this;
     }
 
@@ -87,7 +87,7 @@ namespace x509_req {
         }
 
         if (!X509_REQ_set_pubkey(_req.get(), const_cast<::EVP_PKEY*>(key.get())))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate request public key."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate request public key."); // LCOV_EXCL_LINE
 
         if (X509_REQ_sign(_req.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 certificate request."); // LCOV_EXCL_LINE

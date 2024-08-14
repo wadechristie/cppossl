@@ -120,41 +120,41 @@ namespace x509 {
     builder& builder::set_public_key(ossl::evp_pkey::roref pubkey)
     {
         if (!X509_set_pubkey(_x509.get(), const_cast<::EVP_PKEY*>(pubkey.get())))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate public key."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate public key."); // LCOV_EXCL_LINE
         return *this;
     }
 
     builder& builder::set_subject(x509_name::roref name)
     {
         if (!X509_set_subject_name(_x509.get(), name.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate subject."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate subject."); // LCOV_EXCL_LINE
         return *this;
     }
 
     builder& builder::set_issuer(x509_name::roref name)
     {
         if (!X509_set_issuer_name(_x509.get(), name.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate issuer."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate issuer."); // LCOV_EXCL_LINE
         return *this;
     }
 
     builder& builder::set_not_before(asn1_time::roref not_before)
     {
         if (!X509_set1_notBefore(_x509.get(), not_before.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate notBefore."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate notBefore."); // LCOV_EXCL_LINE
         return *this;
     }
 
     builder& builder::set_not_after(asn1_time::roref not_after)
     {
         if (!X509_set1_notAfter(_x509.get(), not_after.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certifcate notAfter."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate notAfter."); // LCOV_EXCL_LINE
         return *this;
     }
 
-    builder& builder::set_basic_constaints_ext(bool ca, int pathlen)
+    builder& builder::set_basic_constraints_ext(bool ca, int pathlen)
     {
-        auto const ext = x509_extension::make_basic_constaints(ca, pathlen);
+        auto const ext = x509_extension::make_basic_constraints(ca, pathlen);
         _::add_extension(_x509, ext);
         return *this;
     }
@@ -265,7 +265,7 @@ namespace x509 {
         else
         {
             if (!evp_pkey::equal(pubkey, key))
-                CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key does not match selfsigning key");
+                CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key does not match self-signing key");
         }
 
         set_issuer(X509_get_subject_name(_x509.get()));

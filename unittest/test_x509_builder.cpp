@@ -86,7 +86,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Basic Constraints", "[x509]
     SECTION("Basic Constraints - CA:TRUE")
     {
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
-            builder.set_subject(name("Basic Constraints")).set_basic_constaints_ext(/*ca=*/true);
+            builder.set_subject(name("Basic Constraints")).set_basic_constraints_ext(/*ca=*/true);
         });
         REQUIRE(cert);
 
@@ -98,7 +98,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Basic Constraints", "[x509]
     SECTION("Basic Constraints - CA:TRUE, pathlen=1")
     {
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
-            builder.set_subject(name("Basic Constraints")).set_basic_constaints_ext(/*ca=*/true, /*pathlen=*/1);
+            builder.set_subject(name("Basic Constraints")).set_basic_constraints_ext(/*ca=*/true, /*pathlen=*/1);
         });
         REQUIRE(cert);
 
@@ -110,7 +110,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Basic Constraints", "[x509]
     SECTION("Basic Constraints - CA:FALSE")
     {
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
-            builder.set_subject(name("Basic Constraints")).set_basic_constaints_ext(/*ca=*/false);
+            builder.set_subject(name("Basic Constraints")).set_basic_constraints_ext(/*ca=*/false);
         });
         REQUIRE(cert);
 
@@ -236,7 +236,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Authority Key Identifier", 
         = x509::selfsign(signing_key, unittest::default_digest(), [this, &signing_key](x509::builder& builder) {
               builder.set_subject(name("Signing Cert"))
                   .set_public_key(signing_key)
-                  .set_basic_constaints_ext(/*ca=*/true, /*pathlen=*/0)
+                  .set_basic_constraints_ext(/*ca=*/true, /*pathlen=*/0)
                   .set_subject_key_id_ext();
           });
     REQUIRE(signing_cert);

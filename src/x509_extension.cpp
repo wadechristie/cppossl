@@ -10,7 +10,7 @@
 namespace ossl {
 namespace x509_extension {
 
-    owned<::X509_EXTENSION> make_basic_constaints(bool ca, int pathlen)
+    owned<::X509_EXTENSION> make_basic_constraints(bool ca, int pathlen)
     {
         std::stringstream ss;
         ss << (ca ? "critical, CA:TRUE" : "CA:FALSE");
@@ -18,10 +18,10 @@ namespace x509_extension {
             ss << ", pathlen:" << pathlen;
         auto const str = ss.str();
 
-        return make_basic_constaints(str);
+        return make_basic_constraints(str);
     }
 
-    owned<::X509_EXTENSION> make_basic_constaints(std::string_view const& confstr)
+    owned<::X509_EXTENSION> make_basic_constraints(std::string_view const& confstr)
     {
         ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(
             nullptr, nullptr, NID_basic_constraints, confstr.data()) };

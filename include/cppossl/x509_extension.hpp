@@ -15,9 +15,9 @@ namespace x509_extension {
      *
      * @throws ossl::openssl_error
      */
-    owned<::X509_EXTENSION> make_basic_constaints(bool ca, int pathlen = -1);
+    owned<::X509_EXTENSION> make_basic_constraints(bool ca, int pathlen = -1);
 
-    owned<::X509_EXTENSION> make_basic_constaints(std::string_view const& confstr);
+    owned<::X509_EXTENSION> make_basic_constraints(std::string_view const& confstr);
 
     owned<::X509_EXTENSION> make_key_usage(std::string_view const& confstr, bool critical);
 

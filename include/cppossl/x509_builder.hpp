@@ -104,7 +104,7 @@ namespace x509 {
          * @param[in] pathlen set an optional pathlen to a nonnegative value.
          * @throws ossl::openssl_error
          */
-        builder& set_basic_constaints_ext(bool ca, int pathlen = -1);
+        builder& set_basic_constraints_ext(bool ca, int pathlen = -1);
 
         /**
          * @brief Add the keyUsage extension to the X.509 certificate.
