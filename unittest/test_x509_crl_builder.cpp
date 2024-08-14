@@ -40,7 +40,7 @@ owned<::X509> const x509_crl_builder_test::signing_cert { x509::selfsign(
     signing_key, unittest::default_digest(), [](x509::builder& builder) {
         builder.set_subject(name("Signing Certificate"))
             .set_public_key(signing_key)
-            .set_not_after(asn1_time::offset(std::chrono::hours(24) * 30))
+            .set_not_after(asn1::time::offset(std::chrono::hours(24) * 30))
             .set_subject_key_id_ext()
             .set_key_usage_ext("nonRepudiation, keyCertSign, cRLSign");
     }) };
@@ -48,7 +48,7 @@ owned<::X509> const x509_crl_builder_test::signing_cert { x509::selfsign(
 TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Sign", "[x509_crl][builder]")
 {
     auto crl = x509_crl::sign(signing_cert, signing_key, unittest::default_digest(), [](x509_crl::builder& builder) {
-        builder.set_lastupdate(asn1_time::now()).set_nextupdate(asn1_time::offset(std::chrono::hours(24) * 7));
+        builder.set_lastupdate(asn1::time::now()).set_nextupdate(asn1::time::offset(std::chrono::hours(24) * 7));
     });
     REQUIRE(crl);
     REQUIRE_THAT(x509_crl::print_text(crl),
@@ -58,8 +58,8 @@ TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Sign", "[x509_crl][
 TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Add Certificates", "[x509_crl][builder]")
 {
     x509_crl::builder builder;
-    builder.set_lastupdate(asn1_time::now());
-    builder.set_nextupdate(asn1_time::offset(std::chrono::hours(24) * 7));
+    builder.set_lastupdate(asn1::time::now());
+    builder.set_nextupdate(asn1::time::offset(std::chrono::hours(24) * 7));
 
     auto const childkey = unittest::rsa_key_two.load();
     std::vector<owned<::X509>> certs;
@@ -72,7 +72,7 @@ TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Add Certificates", 
                 builder.set_subject(name(ss.str())).set_public_key(childkey).set_authority_key_id_ext(signing_cert);
             }));
         builder.add(
-            *certs.crbegin(), asn1_time::offset(std::chrono::seconds(7 * i)), OCSP_REVOKED_STATUS_KEYCOMPROMISE);
+            *certs.crbegin(), asn1::time::offset(std::chrono::seconds(7 * i)), OCSP_REVOKED_STATUS_KEYCOMPROMISE);
     }
 
     auto const crl = builder.sign(signing_cert, signing_key, unittest::default_digest());

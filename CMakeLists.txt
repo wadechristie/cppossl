@@ -74,6 +74,7 @@ endif()
 ##
 
 SET(CPPOSSL_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/asn1_bit_string.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/asn1_time.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/error.cpp
@@ -92,6 +93,7 @@ SET(CPPOSSL_SRC
 )
 
 SET(CPPOSSL_INC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_bit_string.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_time.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/bio.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/error.hpp

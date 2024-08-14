@@ -47,12 +47,12 @@ namespace x509 {
 
     time_t get_not_before(roref x509)
     {
-        return asn1_time::to_unix((X509_getm_notBefore(x509.get())));
+        return asn1::time::to_unix((X509_getm_notBefore(x509.get())));
     }
 
     time_t get_not_after(roref x509)
     {
-        return asn1_time::to_unix(X509_getm_notAfter(x509.get()));
+        return asn1::time::to_unix(X509_getm_notAfter(x509.get()));
     }
 
     ossl::owned<::ASN1_INTEGER> get_serial_number(roref x509)

@@ -11,7 +11,7 @@ namespace x509_crl {
 
     namespace _ {
 
-        void set_lastupdate(rwref crl, asn1_time::roref lastupdate)
+        void set_lastupdate(rwref crl, asn1::time::roref lastupdate)
         {
             if (!X509_CRL_set1_lastUpdate(crl.get(), lastupdate.get()))
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL last update property."); // LCOV_EXCL_LINE
@@ -23,17 +23,17 @@ namespace x509_crl {
     {
         auto crl = make<::X509_CRL>();
         X509_CRL_set_version(_crl.get(), X509_CRL_VERSION_2);
-        _::set_lastupdate(crl, asn1_time::now());
+        _::set_lastupdate(crl, asn1::time::now());
         _crl = std::move(crl);
     }
 
-    builder& builder::set_lastupdate(asn1_time::roref lastupdate)
+    builder& builder::set_lastupdate(asn1::time::roref lastupdate)
     {
         _::set_lastupdate(_crl, lastupdate);
         return *this;
     }
 
-    builder& builder::set_nextupdate(asn1_time::roref nextupdate)
+    builder& builder::set_nextupdate(asn1::time::roref nextupdate)
     {
         if (!X509_CRL_set1_nextUpdate(_crl.get(), nextupdate.get()))
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL next update property."); // LCOV_EXCL_LINE
@@ -41,12 +41,12 @@ namespace x509_crl {
         return *this;
     }
 
-    builder& builder::add(ossl::x509::roref cert, asn1_time::roref revocation_time)
+    builder& builder::add(ossl::x509::roref cert, asn1::time::roref revocation_time)
     {
         return add(cert, revocation_time, static_cast<uint8_t>(OCSP_REVOKED_STATUS_UNSPECIFIED));
     }
 
-    builder& builder::add(ossl::x509::roref cert, asn1_time::roref revocation_time, int reason)
+    builder& builder::add(ossl::x509::roref cert, asn1::time::roref revocation_time, int reason)
     {
         auto tmp = make<::ASN1_ENUMERATED>();
         if (tmp == nullptr || !ASN1_ENUMERATED_set(tmp.get(), reason))
@@ -55,7 +55,7 @@ namespace x509_crl {
     }
 
     builder& builder::add(
-        ossl::x509::roref cert, asn1_time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason)
+        ossl::x509::roref cert, asn1::time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason)
     {
         auto revoked = ossl::make<::X509_REVOKED>();
 

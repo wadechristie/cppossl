@@ -92,7 +92,7 @@ namespace x509 {
         set_random_serialno();
 
         // default notBefore & notAfter to now
-        auto const now = asn1_time::now();
+        auto const now = asn1::time::now();
         set_not_before(now);
         set_not_after(now);
 
@@ -138,14 +138,14 @@ namespace x509 {
         return *this;
     }
 
-    builder& builder::set_not_before(asn1_time::roref not_before)
+    builder& builder::set_not_before(asn1::time::roref not_before)
     {
         if (!X509_set1_notBefore(_x509.get(), not_before.get()))
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate notBefore."); // LCOV_EXCL_LINE
         return *this;
     }
 
-    builder& builder::set_not_after(asn1_time::roref not_after)
+    builder& builder::set_not_after(asn1::time::roref not_after)
     {
         if (!X509_set1_notAfter(_x509.get(), not_after.get()))
             CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate notAfter."); // LCOV_EXCL_LINE

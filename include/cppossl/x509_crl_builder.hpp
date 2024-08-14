@@ -49,13 +49,13 @@ namespace x509_crl {
 
         ~builder() noexcept = default;
 
-        builder& set_lastupdate(asn1_time::roref lastupdate);
+        builder& set_lastupdate(asn1::time::roref lastupdate);
 
-        builder& set_nextupdate(asn1_time::roref nextupdate);
+        builder& set_nextupdate(asn1::time::roref nextupdate);
 
-        builder& add(ossl::x509::roref cert, asn1_time::roref revocation_time);
-        builder& add(ossl::x509::roref cert, asn1_time::roref revocation_time, int reason);
-        builder& add(ossl::x509::roref cert, asn1_time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason);
+        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time);
+        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time, int reason);
+        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason);
 
         /**
          * @brief Sign the current certificate revocation list context.

@@ -71,8 +71,8 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - notBefore/notAfter", "[x509
 
     auto cert = x509::selfsign(key, unittest::default_digest(), [this, lastweek, nextweek](x509::builder& builder) {
         builder.set_subject(name("notBefore/notAfter"))
-            .set_not_before(asn1_time::from_unix(lastweek))
-            .set_not_after(asn1_time::from_unix(nextweek));
+            .set_not_before(asn1::time::from_unix(lastweek))
+            .set_not_after(asn1::time::from_unix(nextweek));
     });
     REQUIRE(cert);
     REQUIRE(x509::get_not_before(cert) == lastweek);

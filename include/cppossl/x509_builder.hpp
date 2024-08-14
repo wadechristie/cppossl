@@ -88,14 +88,14 @@ namespace x509 {
          *
          * @throws ossl::openssl_error
          */
-        builder& set_not_before(asn1_time::roref not_before);
+        builder& set_not_before(asn1::time::roref not_before);
 
         /**
          * @brief Set X.509 notAfter field.
          *
          * @throws ossl::openssl_error
          */
-        builder& set_not_after(asn1_time::roref not_after);
+        builder& set_not_after(asn1::time::roref not_after);
 
         /**
          * @brief Add the basicConstraints extension to the X.509 certificate.
