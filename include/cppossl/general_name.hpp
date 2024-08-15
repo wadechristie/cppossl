@@ -45,6 +45,8 @@ namespace general_name {
     /** @brief Convert IPv6 address to OpenSSL GENERAL_NAME object. */
     owned<::GENERAL_NAME> make_ip(::in6_addr const& ipv6);
 
+    owned<::GENERAL_NAME> make_upn(std::string_view const& upn);
+
     /**@}*/
 
 } // namespace general_name

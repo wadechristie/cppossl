@@ -14,16 +14,11 @@ namespace general_name {
 
     namespace _ {
 
-        static owned<::GENERAL_NAME> make_ia5(int type, std::string_view const& name)
+        static owned<::GENERAL_NAME> make_ia5(int type, std::string_view const& value)
         {
-            auto ia5str = make<asn1::IA5STRING>();
-            if (!ASN1_STRING_set(ia5str.get(), name.data(), name.size()))
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set alternate name IA5 value."); // LCOV_EXCL_LINE
-
-            owned<::GENERAL_NAME> genname = make<::GENERAL_NAME>();
-            GENERAL_NAME_set0_value(genname.get(), type, ia5str.release());
-
-            return genname;
+            owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
+            GENERAL_NAME_set0_value(name.get(), type, make<asn1::IA5STRING>(value).release());
+            return name;
         }
 
     } // _ namespace
@@ -81,6 +76,19 @@ namespace general_name {
 
         auto const ipstr = std::string(buffer.data());
         return make_ip(ipstr);
+    }
+
+    owned<::GENERAL_NAME> make_upn(std::string_view const& upn)
+    {
+        owned<::ASN1_TYPE> value = make<::ASN1_TYPE>();
+        ASN1_TYPE_set(value.get(), V_ASN1_UTF8STRING, make<asn1::UTF8STRING>(upn).release());
+
+        owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
+        if (GENERAL_NAME_set0_othername(name.get(), OBJ_nid2obj(NID_ms_upn), value.release()) != 1)
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                "Failed to set GENERAL_NAME object with UPN value.");
+
+        return name;
     }
 
 } // namespace general_name

@@ -256,7 +256,7 @@ namespace raii {
         },                                                                                              \
         [](STACK_OF(TypeT) * sk) { sk_##TypeT##_pop_free(sk, TypeT##_free); })
 
-DEFINE_OSSL_RAII_TRAITS_AUTO(ASN1_STRING);
+DEFINE_OSSL_RAII_TRAITS_AUTO(ASN1_TYPE);
 DEFINE_OSSL_RAII_TRAITS_AUTO(DIST_POINT);
 DEFINE_OSSL_RAII_TRAITS_AUTO(DIST_POINT_NAME);
 DEFINE_OSSL_RAII_TRAITS_AUTO(EVP_PKEY);
@@ -272,6 +272,7 @@ DEFINE_OSSL_RAII_TRAITS_AUTO(X509_STORE);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_STORE_CTX);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_VERIFY_PARAM);
 
+DEFINE_OSSL_RAII_OBJECT_TRAITS(ASN1_STRING, ASN1_STRING_type_new, ASN1_STRING_free);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(BIGNUM, BN_new, BN_free);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(BIO, BIO_new, BIO_free_all);
 DEFINE_OSSL_RAII_OBJECT_TRAITS(char, nullptr, [](char* p) { OPENSSL_free(p); });
@@ -289,7 +290,6 @@ using owned = raii::owned<T>;
 template <typename T, typename... ArgsT>
 raii::owned<T> make(ArgsT&&... args)
 {
-    static_assert(!std::is_same<T, ::asn1_string_st>::value);
     return raii::owned<T> { raii::traits<T>::newfn(std::forward<ArgsT>(args)...) };
 }
 

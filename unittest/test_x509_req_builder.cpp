@@ -172,4 +172,19 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Builder - Subject Alternative Nam
         REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
         REQUIRE_THAT(cert_text, ContainsSubstring("email:email@example.com"));
     }
+
+    SECTION("UPN")
+    {
+        auto cert = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
+            builder.set_subject(name("UPN Alt Name"))
+                .set_subject_alt_names_ext({
+                    general_name::make_upn("user@domain"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509_req::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("othername: UPN::user@domain"));
+    }
 }
