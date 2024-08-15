@@ -13,9 +13,23 @@
 
 #define CPPOSSL_THROW_ERRNO(err, msg) throw std::system_error(err, std::system_category(), msg)
 #ifndef NDEBUG
-#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg) throw ::ossl::openssl_error(ERR_get_error(), msg, __LINE__, __FILE__)
+#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg)                     \
+    do                                                            \
+    {                                                             \
+        ossl::error_code const ec = ERR_peek_error();             \
+        CPPOSSL_ASSERT(ec != 0);                                  \
+        ERR_clear_error();                                        \
+        throw ::ossl::openssl_error(ec, msg, __LINE__, __FILE__); \
+    } while (0)
 #else
-#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg) throw ::ossl::openssl_error(ERR_get_error(), msg)
+#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg)         \
+    do                                                \
+    {                                                 \
+        ossl::error_code const ec = ERR_peek_error(); \
+        CPPOSSL_ASSERT(ec != 0);                      \
+        ERR_clear_error();                            \
+        throw ::ossl::openssl_error(ec, msg);         \
+    } while (0)
 #endif
 
 /** @brief Abort. */
@@ -41,6 +55,8 @@
 
 namespace ossl {
 
+using error_code = unsigned long;
+
 /**
  * \defgroup error Exceptions
  */
@@ -50,8 +66,8 @@ namespace ossl {
 class openssl_error : public std::exception
 {
 public:
-    openssl_error(int error, char const* msg);
-    openssl_error(int error, char const* msg, uint32_t line, char const* file);
+    openssl_error(error_code error, char const* msg);
+    openssl_error(error_code error, char const* msg, uint32_t line, char const* file);
 
     openssl_error(openssl_error&&) = default;
     openssl_error& operator=(openssl_error&&) = default;
@@ -61,15 +77,15 @@ public:
 
     virtual ~openssl_error() = default;
 
-    char const* what() const noexcept override;
+    virtual char const* what() const noexcept override;
 
-    inline int error() const noexcept
+    inline error_code error() const noexcept
     {
         return _error;
     }
 
 private:
-    int _error { -1 };
+    error_code _error { 0 };
     std::string _msg;
 };
 
