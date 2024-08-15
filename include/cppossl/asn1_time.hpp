@@ -31,6 +31,8 @@ namespace asn1 {
             return cmp(left, right) == 0;
         }
 
+        owned<::ASN1_TIME> dup(roref time);
+
         owned<::ASN1_TIME> now();
         owned<::ASN1_TIME> offset(std::chrono::seconds const& from_now);
 

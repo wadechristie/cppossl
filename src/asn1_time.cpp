@@ -19,6 +19,14 @@ namespace asn1 {
             return result;
         }
 
+        owned<::ASN1_TIME> dup(roref time)
+        {
+            owned<::ASN1_TIME> t { ASN1_TIME_dup(time.get()) };
+            if (t == nullptr)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to duplicate ASN1_TIME."); // LCOV_EXCL_LINE
+            return t;
+        } // LCOV_EXCL_LINE
+
         owned<::ASN1_TIME> now()
         {
             return offset(std::chrono::seconds::zero());

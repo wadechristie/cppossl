@@ -14,8 +14,9 @@ function show_usage()
     echo "    --help      Show this help."
 }
 
+DO_CLEAN="no"
 EXTRA_PARAMS=()
-BUILD_PARAMS=("--clean" "--coverage" "--builddir" "${COV_DIR}")
+BUILD_PARAMS=("--coverage" "--builddir" "${COV_DIR}")
 
 while (( "$#" )); do
     case "$1" in
@@ -23,11 +24,20 @@ while (( "$#" )); do
             show_usage
             exit 0
             ;;
+        --clean)
+            DO_CLEAN="yes"
+            shift
+            ;;
         *)
             die "Unsupported flag: $1"
             ;;
     esac
 done
+
+if [[ 'yes' == "${DO_CLEAN}" ]]
+then
+    BUILD_PARAMS=("--clean" "${BUILD_PARAMS[@]}")
+fi
 
 echo "./scripts/build.sh ${BUILD_PARAMS[@]}"
 ./scripts/build.sh "${BUILD_PARAMS[@]}" || die 'Build failed!'
