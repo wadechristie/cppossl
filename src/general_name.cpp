@@ -80,14 +80,16 @@ namespace general_name {
 
     owned<::GENERAL_NAME> make_upn(std::string_view const& upn)
     {
+        owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
+
         owned<::ASN1_TYPE> value = make<::ASN1_TYPE>();
         ASN1_TYPE_set(value.get(), V_ASN1_UTF8STRING, make<asn1::UTF8STRING>(upn).release());
 
-        owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
-        if (GENERAL_NAME_set0_othername(name.get(), OBJ_nid2obj(NID_ms_upn), value.release()) != 1)
+        if (GENERAL_NAME_set0_othername(name.get(), OBJ_nid2obj(NID_ms_upn), value.get()) != 1)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
                 "Failed to set GENERAL_NAME object with UPN value.");
 
+        (void)value.release();
         return name;
     }
 
