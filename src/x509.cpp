@@ -59,9 +59,9 @@ namespace x509 {
     {
         ossl::owned<::ASN1_INTEGER> serial { ASN1_INTEGER_dup(X509_get_serialNumber(const_cast<::X509*>(x509.get()))) };
         if (serial == nullptr)
-            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number.");
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number."); // LCOV_EXCL_LINE
         return serial;
-    }
+    } // LCOV_EXCL_LINE
 
     ossl::owned<::BIGNUM> get_serial_number_bn(roref x509)
     {

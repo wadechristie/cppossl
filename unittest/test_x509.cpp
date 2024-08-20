@@ -9,6 +9,10 @@
 #include <cppossl/error.hpp>
 #include <cppossl/pem.hpp>
 #include <cppossl/x509.hpp>
+#include <cppossl/x509_builder.hpp>
+#include <cppossl/x509_name.hpp>
+
+#include "common.hpp"
 
 using namespace ossl;
 
@@ -70,4 +74,19 @@ TEST_CASE("X.509 - retain()", "[x509]")
     }
 
     REQUIRE(cert);
+}
+
+TEST_CASE("X.509 - equal()", "[x509]")
+{
+    auto const key = unittest::rsa_key_one.load();
+    auto const subject = x509_name::build([](auto& name) { x509_name::set_common_name(name, "Equality Test"); });
+    owned<::X509> cert = x509::selfsign(
+        key, unittest::default_digest(), [&subject](x509::builder& builder) { builder.set_subject(subject); });
+    REQUIRE(cert);
+
+    std::string cert_as_pem;
+    REQUIRE_NOTHROW(cert_as_pem = pem::to_pem_string(cert));
+
+    REQUIRE(ossl::x509::equal(cert, pem::load<::X509>(cert_as_pem)));
+    REQUIRE_FALSE(ossl::x509::equal(cert, pem::load<::X509>(pemstr)));
 }
