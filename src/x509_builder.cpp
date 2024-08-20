@@ -250,7 +250,7 @@ namespace x509 {
 
         owned<::EVP_PKEY> const pubkey { X509_get_pubkey(_x509.get()) };
         if (pubkey == nullptr)
-            CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key was not set");
+            CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key was not set"); // LCOV_EXCL_LINE
 
         set_issuer(X509_get_subject_name(issuer_cert.get()));
 

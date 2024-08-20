@@ -57,7 +57,7 @@ namespace der {
             auto str = make<asn1::OCTET_STRING>();
             std::tie(str->data, str->length) = release();
             return str;
-        }
+        } // LCOV_EXCL_LINE
 
     private:
         raii::owned<uint8_t> _data;
@@ -120,7 +120,7 @@ namespace der {
 #undef _CASE
 
         if (size < 0)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to encode object to DER.");
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to encode object to DER."); // LCOV_EXCL_LINE
 
         return encoded_value(data, size);
     }

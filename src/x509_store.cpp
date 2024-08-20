@@ -38,7 +38,7 @@ namespace x509_store {
         if (!X509_STORE_add_crl(store.get(), const_cast<::X509_CRL*>(crl.get())))
             CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
                 "Failed to add X.509 certificate revocation list to X.509 store.");
-    }
+    } // LCOV_EXCL_LINE
 
 } // namespace x509_store
 } // namespace ossl

@@ -19,7 +19,7 @@ namespace general_name {
             owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
             GENERAL_NAME_set0_value(name.get(), type, make<asn1::IA5STRING>(value).release());
             return name;
-        }
+        } // LCOV_EXCL_LINE
 
     } // _ namespace
 
@@ -47,7 +47,7 @@ namespace general_name {
     {
         owned<::ASN1_OCTET_STRING> octstr { a2i_IPADDRESS(ipstr.c_str()) };
         if (octstr == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR(
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
                 "Failed to convert IP address string to OpenSSL ASN1_OCTET_STRING object.");
 
         owned<::GENERAL_NAME> genname = owned<::GENERAL_NAME>::make();

@@ -44,7 +44,7 @@ namespace _ {
             /*keylen=*/cipher_keylen + cipher_ivlen,
             /*out=*/tmpKeyIv.data());
         if (!pbkdf2)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to dervice key/iv from password.");
+            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to derive key/iv from password."); // LCOV_EXCL_LINE
 
         std::array<uint8_t, EVP_MAX_KEY_LENGTH> key { 0 };
         std::array<uint8_t, EVP_MAX_IV_LENGTH> iv { 0 };
