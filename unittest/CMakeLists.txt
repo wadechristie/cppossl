@@ -9,6 +9,7 @@ SET(CPPOSSL_UNITTEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/common_pkeys.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_bit_string.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_string.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_time.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_bio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_evp_pkey.cpp

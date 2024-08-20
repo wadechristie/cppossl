@@ -39,8 +39,7 @@ inline void set(raii::rwref<::ASN1_STRING> str, std::string_view value)
         throw std::runtime_error("Operation not supported on ASN1_STRING type.");
 
     if (value.size() > std::numeric_limits<int>::max())
-        throw std::runtime_error( // LCOV_EXCL_LINE
-            "Input string too large for ASN1_STRING construction.");
+        throw std::runtime_error("Input string too large for ASN1_STRING construction."); // LCOV_EXCL_LINE
 
     if (!ASN1_STRING_set(str.get(), value.data(), static_cast<int>(value.size())))
         CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set ASN1_STRING value."); // LCOV_EXCL_LINE
@@ -53,6 +52,6 @@ raii::owned<::asn1_string_st> make(std::string_view value)
     raii::owned<::asn1_string_st> str = make<T>();
     set(str, value);
     return str;
-}
+} // LCOV_EXCL_LINE
 
 } // namespace ossl
