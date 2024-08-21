@@ -40,24 +40,25 @@ namespace pem {
     static constexpr std::string_view x509_req_begin_line = "-----BEGIN CERTIFICATE REQUEST-----";
     static constexpr std::string_view x509_req_end_line = "-----END CERTIFICATE REQUEST-----";
 
-    void to_pem(bio::roref bio, x509::roref x509);
+    /** @brief Write the OpenSSL X.509 certificate object as PEM to the given BIO. */
+    void to_pem(bio::rwref bio, x509::roref x509);
 
     /** @brief Convert the OpenSSL X.509 certificate object to a PEM string. */
     std::string to_pem_string(x509::roref x509);
 
-    void to_pem(bio::roref bio, x509_crl::roref crl);
+    void to_pem(bio::rwref bio, x509_crl::roref crl);
 
     /** @brief Convert the OpenSSL X.509 certificate revocation list object to a PEM string. */
     std::string to_pem_string(x509_crl::roref crl);
 
-    void to_pem(bio::roref bio, x509_req::roref req);
+    void to_pem(bio::rwref bio, x509_req::roref req);
 
     /** @brief Convert the OpenSSL X.509 certificate request object to a PEM string. */
     std::string to_pem_string(x509_req::roref req);
 
-    void to_pem(bio::roref bio, evp_pkey::roref pkey);
+    void to_pem(bio::rwref bio, evp_pkey::roref pkey);
 
-    void to_pem(bio::roref bio, evp_pkey::roref pkey, std::string_view const& password);
+    void to_pem(bio::rwref bio, evp_pkey::roref pkey, std::string_view const& password);
 
     /** @brief Convert the OpenSSL private key object to a PEM string. */
     std::string to_pem_string(evp_pkey::roref pkey);
@@ -80,6 +81,15 @@ namespace pem {
     struct loader<::X509>
     {
         static owned<::X509> load(std::string_view const& pem);
+        static owned<::X509> load(raii::rwref<::BIO> bio);
+    };
+
+    /** @brief Load PEM encoded X.509 certificate. */
+    template <>
+    struct loader<STACK_OF(X509)>
+    {
+        static owned<STACK_OF(X509)> load(std::string_view const& pem);
+        static owned<STACK_OF(X509)> load(raii::rwref<::BIO> bio);
     };
 
     /** @brief Load PEM encoded X.509 certificate revocation list. */
@@ -87,6 +97,7 @@ namespace pem {
     struct loader<::X509_CRL>
     {
         static owned<::X509_CRL> load(std::string_view const& pem);
+        static owned<::X509_CRL> load(raii::rwref<::BIO> bio);
     };
 
     /** @brief Load PEM encoded X.509 certificate request. */
@@ -94,6 +105,7 @@ namespace pem {
     struct loader<::X509_REQ>
     {
         static owned<::X509_REQ> load(std::string_view const& pem);
+        static owned<::X509_REQ> load(raii::rwref<::BIO> bio);
     };
 
     /** @brief Load PEM encoded private key. */
@@ -102,6 +114,9 @@ namespace pem {
     {
         static owned<::EVP_PKEY> load(std::string_view const& pem);
         static owned<::EVP_PKEY> load(std::string_view const& pem, std::string_view const& password);
+
+        static owned<::EVP_PKEY> load(raii::rwref<::BIO> bio);
+        static owned<::EVP_PKEY> load(raii::rwref<::BIO> bio, std::string_view const& password);
     };
 
     template <typename T, typename... ArgsT>

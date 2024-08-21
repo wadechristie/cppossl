@@ -7,6 +7,7 @@
 #include <utility>
 
 #include <openssl/types.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #include <cppossl/error.hpp>
@@ -123,7 +124,9 @@ namespace raii {
     class rwref
     {
     public:
-        rwref(::X509_NAME* ptr) noexcept
+        typedef T type;
+
+        rwref(T* ptr) noexcept
             : _ptr(ptr)
         {
         }
@@ -163,6 +166,11 @@ namespace raii {
             return _ptr;
         }
 
+        T* get() const noexcept
+        {
+            return _ptr;
+        }
+
     private:
         T* _ptr { nullptr };
     };
@@ -171,6 +179,8 @@ namespace raii {
     class roref
     {
     public:
+        typedef T type;
+
         roref(T const* ptr) noexcept
             : _ptr(ptr)
         {
@@ -264,6 +274,7 @@ DEFINE_OSSL_RAII_TRAITS_AUTO(GENERAL_NAME);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_CRL);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_EXTENSION);
+DEFINE_OSSL_RAII_TRAITS_AUTO(X509_INFO);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_NAME);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_NAME_ENTRY);
 DEFINE_OSSL_RAII_TRAITS_AUTO(X509_REQ);
@@ -283,6 +294,7 @@ DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(GENERAL_NAME);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509_CRL);
 DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509_EXTENSION);
+DEFINE_OSSL_RAII_TRAITS_AUTO_STACK(X509_INFO);
 
 template <typename T>
 using owned = raii::owned<T>;

@@ -57,8 +57,13 @@ namespace x509 {
     /** @brief Print X.509 certificate text to a string. */
     std::string print_text(roref x509);
 
+    std::string print_text(raii::roref<STACK_OF(X509)> stack);
+
     /** @brief Print X.509 certificate text to an OpenSSL BIO. */
     void print_text(bio const& bio, roref x509);
+
+    /** @brief Print stack of X.509 certificates text to an OpenSSL BIO. */
+    void print_text(bio const& bio, raii::roref<STACK_OF(X509)> stack);
 
     /**@}*/
 

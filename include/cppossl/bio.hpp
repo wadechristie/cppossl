@@ -110,6 +110,11 @@ public:
         return _bio.get();
     }
 
+    inline operator raii::rwref<::BIO>()
+    {
+        return _bio;
+    }
+
 protected:
     bio() noexcept = default;
 

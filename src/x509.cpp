@@ -9,6 +9,7 @@
 #include "cppossl/bio.hpp"
 #include "cppossl/error.hpp"
 #include "cppossl/raii.hpp"
+#include "cppossl/stack.hpp"
 #include "cppossl/x509.hpp"
 
 namespace ossl {
@@ -20,6 +21,16 @@ namespace x509 {
         {
             if (X509_print_ex(bio, const_cast<X509*>(x509), 0, 0) <= 0)
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to print X.509 object to text."); // LCOV_EXCL_LINE
+        }
+
+        static void x509_stack_print_text(bio const& bio, STACK_OF(X509) const* s)
+        {
+            size_t const count = sk_X509_num(s);
+            for (size_t i = 0; i < count; ++i)
+            {
+                auto elem = sk_X509_value(s, i);
+                x509_print_text(bio, elem);
+            }
         }
 
     } // _ namespace
@@ -85,10 +96,22 @@ namespace x509 {
         _::x509_print_text(bio, x509.get());
     }
 
+    void print_text(bio const& bio, raii::roref<STACK_OF(X509)> stack)
+    {
+        _::x509_stack_print_text(bio, stack.get());
+    }
+
     std::string print_text(roref x509)
     {
         buffered_bio bio;
         print_text(bio, x509);
+        return bio.str();
+    }
+
+    std::string print_text(raii::roref<STACK_OF(X509)> stack)
+    {
+        buffered_bio bio;
+        print_text(bio, stack);
         return bio.str();
     }
 
