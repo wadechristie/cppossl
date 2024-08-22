@@ -22,7 +22,7 @@ namespace x509_req {
 
             // TODO filter the list for matching nids?
 
-            ossl::stack::push(sk, std::move(ext));
+            sk::wrap(sk).push(std::move(ext));
         }
 
     } // namespace _
@@ -75,11 +75,11 @@ namespace x509_req {
 
     builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
     {
-        auto gnames = ossl::make<STACK_OF(GENERAL_NAME)>();
+        auto gnames = sk::make<GENERAL_NAME>();
         for (auto const& name : altnames)
-            ossl::stack::push(gnames, general_name::copy(name));
+            gnames.push(general_name::copy(name));
 
-        return set_subject_alt_names_ext(gnames);
+        return set_subject_alt_names_ext(gnames.mine());
     }
 
     owned<::X509_REQ> builder::sign(ossl::evp_pkey::roref key, EVP_MD const* digest)

@@ -121,6 +121,12 @@ namespace raii {
     };
 
     template <typename T>
+    raii::owned<T> own(T* obj)
+    {
+        return raii::owned<T> { obj };
+    }
+
+    template <typename T>
     class rwref
     {
     public:
@@ -222,6 +228,11 @@ namespace raii {
         }
 
         T const* get() noexcept
+        {
+            return _ptr;
+        }
+
+        T const* get() const noexcept
         {
             return _ptr;
         }

@@ -51,21 +51,21 @@ namespace pem {
 
         static owned<STACK_OF(X509)> load_x509_stack_bio(raii::rwref<::BIO> bio)
         {
-            STACK_OF(X509_INFO)* tmp = PEM_X509_INFO_read_bio(bio.get(), nullptr, pkey_password_cb, nullptr);
-            if (tmp == nullptr)
+            auto stack_of_info = raii::own(PEM_X509_INFO_read_bio(bio.get(), nullptr, pkey_password_cb, nullptr));
+            if (!stack_of_info)
                 CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to load X.509 certificate revocation list PEM.");
-            owned<STACK_OF(X509_INFO)> info(tmp);
-            owned<STACK_OF(X509)> certs = make<STACK_OF(X509)>();
-            size_t const count = stack::size(info);
-            for (size_t i = 0; i < count; ++i)
+
+            auto certs = sk::make<X509>();
+            for (auto info : sk::wrap(stack_of_info))
             {
-                ::X509_INFO* item = stack::get(info, i);
-                if (item->x509 == nullptr)
+                if (info->x509 == nullptr)
                     continue;
-                stack::push(certs, item->x509);
-                item->x509 = nullptr;
+
+                certs.push(raii::owned(info->x509));
+                info->x509 = nullptr;
             }
-            return certs;
+
+            return certs.mine();
         }
 
         static owned<::X509_CRL> load_x509_crl_bio(raii::rwref<::BIO> bio)
@@ -135,7 +135,7 @@ namespace pem {
 
     void to_pem(bio::rwref bio, evp_pkey::roref pkey, std::string_view const& password)
     {
-        _::pkey_write_bio(bio, pkey.get(), nullptr, 0);
+        _::pkey_write_bio(bio, pkey.get(), password.data(), password.size());
     }
 
     void to_pem(bio::rwref bio, x509::roref x509)

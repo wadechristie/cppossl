@@ -4,166 +4,254 @@
 //
 #pragma once
 
-#include <algorithm>
+#include <new>
 
 #include <openssl/stack.h>
-#include <openssl/x509.h>
 
-#include <cppossl/error.hpp>
 #include <cppossl/raii.hpp>
 
 namespace ossl {
-namespace stack {
+namespace sk {
 
-    /**
-     * \defgroup stack OpenSSL Stack Helpers
-     */
-    /**@{*/
+    template <typename T>
+    class stack_iterator;
 
-    template <typename StackT>
-    raii::owned<StackT> make()
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-        return raii::owned<StackT>::make();
-    }
-
-    template <typename StackT>
-    size_t size(StackT& sk)
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-        return OPENSSL_sk_num(reinterpret_cast<OPENSSL_STACK*>(sk.get()));
-    }
-
-    template <typename StackT>
-    bool empty(StackT& sk)
-    {
-        return size(sk) == 0;
-    }
-
-    template <typename StackT, typename IndexT>
-    typename raii::traits<typename StackT::type>::elem_type* get(StackT& sk, IndexT index)
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-
-        return reinterpret_cast<typename raii::traits<typename StackT::type>::elem_type*>(
-            OPENSSL_sk_value(reinterpret_cast<OPENSSL_STACK*>(sk.get()), static_cast<int>(index)));
-    }
-
-    template <typename StackT>
-    void push(StackT& sk, raii::owned<typename raii::traits<typename StackT::type>::elem_type> elem)
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-
-        if (!OPENSSL_sk_push(reinterpret_cast<OPENSSL_STACK*>(sk.get()), elem.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to push element onto stack."); // LCOV_EXCL_LINE
-        elem.release();
-    }
-
-    template <typename StackT>
-    void push(StackT& sk, raii::roref<typename raii::traits<typename StackT::type>::elem_type> elem)
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-
-        if (!OPENSSL_sk_push(reinterpret_cast<OPENSSL_STACK*>(sk.get()), elem.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to push element onto stack."); // LCOV_EXCL_LINE
-    }
-
-    template <typename StackT>
-    raii::owned<typename raii::traits<typename StackT::type>::elem_type> pop(StackT& sk)
-    {
-        static_assert(raii::traits<typename StackT::type>::is_stack, "Requires OpenSSL RAII stack type!");
-
-        return raii::owned<typename raii::traits<typename StackT::type>::elem_type> {
-            reinterpret_cast<typename raii::traits<typename StackT::type>::elem_type*>(
-                OPENSSL_sk_pop(reinterpret_cast<OPENSSL_STACK*>(sk.get())))
-        };
-    }
-
-    template <typename StackT>
-    class iterator
+    template <typename T>
+    class stack_wrapper
     {
     public:
-        using iterator_type = iterator<StackT>;
-        using elem_type = typename raii::traits<StackT>::elem_type;
+        typedef typename raii::traits<T>::stack_type* raw_stack_ptr;
 
-        static iterator_type begin(raii::rwref<StackT> stack) noexcept
+        stack_wrapper() = delete;
+
+        explicit stack_wrapper(raw_stack_ptr sk)
+            : _sk(reinterpret_cast<OPENSSL_STACK*>(sk))
         {
-            return iterator_type(stack);
         }
 
-        static iterator_type end(raii::rwref<StackT> stack) noexcept
+        stack_wrapper(stack_wrapper&&) = delete;
+        stack_wrapper& operator=(stack_wrapper&&) = delete;
+
+        stack_wrapper(stack_wrapper const&) = delete;
+        stack_wrapper& operator=(stack_wrapper const&) = delete;
+
+        ~stack_wrapper()
         {
-            auto it = iterator_type(stack);
-            it._index = stack::size(stack);
-            return it;
         }
 
-        iterator(iterator<StackT>&&) = default;
-        iterator<StackT>& operator=(iterator<StackT>&&) = default;
-
-        iterator(iterator<StackT> const&) = default;
-        iterator<StackT>& operator=(iterator<StackT> const&) = default;
-
-        ~iterator() = default;
-
-        elem_type* operator*() noexcept
+        size_t size() const
         {
-            CPPOSSL_ASSERT(_index < stack::size(_stack));
-            return stack::get(_stack, _index);
+            return OPENSSL_sk_num(_sk);
         }
 
-        iterator_type& operator++() noexcept
+        bool empty() const
         {
-            _index = std::min(_index + 1, stack::size(_stack));
+            return size() == 0;
+        }
+
+        void push(raii::owned<T> value)
+        {
+            if (OPENSSL_sk_push(_sk, value.get()) <= 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to push stack element.");
+            (void)value.release();
+        }
+
+        void unshift(raii::owned<T> value)
+        {
+            if (OPENSSL_sk_unshift(_sk, value.get()) <= 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to unshift stack element.");
+            (void)value.release();
+        }
+
+        raii::owned<T> pop()
+        {
+            void* v = OPENSSL_sk_pop(_sk);
+            if (v == nullptr)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to pop stack element.");
+            return raii::owned<T>(reinterpret_cast<T*>(v));
+        }
+
+        raii::owned<T> shift()
+        {
+            void* v = OPENSSL_sk_shift(_sk);
+            if (v == nullptr)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to shift stack element.");
+            return raii::owned<T>(reinterpret_cast<T*>(v));
+        }
+
+        stack_iterator<T> begin() noexcept
+        {
+            return stack_iterator<T>(_sk, 0);
+        }
+
+        stack_iterator<T> end() noexcept
+        {
+            return stack_iterator<T>(_sk, size());
+        }
+
+        raw_stack_ptr raw() const
+        {
+            return reinterpret_cast<raw_stack_ptr>(_sk);
+        }
+
+        void drop()
+        {
+            _sk = nullptr;
+        }
+
+        raw_stack_ptr release()
+        {
+            auto sk = raw();
+            drop();
+            return sk;
+        }
+
+    protected:
+        explicit stack_wrapper(OPENSSL_STACK* sk)
+            : _sk(sk)
+        {
+        }
+
+        OPENSSL_STACK* _sk { nullptr };
+    };
+
+    template <typename T>
+    stack_wrapper<typename raii::traits<T>::elem_type> wrap(T* sk)
+    {
+        return stack_wrapper<typename raii::traits<T>::elem_type>(sk);
+    }
+
+    template <typename T>
+    stack_wrapper<typename raii::traits<T>::elem_type> wrap(raii::owned<T> const& sk)
+    {
+        return wrap(sk.get());
+    }
+
+    template <typename T>
+    class owned_stack : public stack_wrapper<T>
+    {
+    public:
+        typedef raii::owned<typename raii::traits<T>::stack_type> owned_handle;
+
+        static owned_stack<T> make()
+        {
+            OPENSSL_STACK* sk = OPENSSL_sk_new_null();
+            if (sk == nullptr)
+                throw std::bad_alloc();
+            return owned_stack<T>(sk);
+        }
+
+        explicit owned_stack(typename raii::traits<T>::stack_type* stack)
+            : stack_wrapper<T>(stack)
+        {
+        }
+
+        explicit owned_stack(owned_handle stack)
+            : stack_wrapper<T>(stack.get())
+        {
+            (void)stack.release();
+        }
+
+        owned_stack(owned_stack&& move) noexcept
+        {
+            std::swap(this->_sk, move._sk);
+        }
+
+        owned_stack& operator=(owned_stack&& move) noexcept
+        {
+            std::swap(this->_sk, move._sk);
             return *this;
         }
 
-        bool operator==(iterator_type const& Rhs) noexcept
+        owned_stack(owned_stack const&) = delete;
+        owned_stack& operator=(owned_stack const&) = delete;
+
+        ~owned_stack()
         {
-            return _stack.get() == Rhs._stack.get() && _index == Rhs._index;
+            if (this->_sk != nullptr)
+            {
+                OPENSSL_sk_pop_free(this->_sk, reinterpret_cast<OPENSSL_sk_freefunc>(raii::traits<T>::freefn));
+                this->_sk = nullptr;
+            }
         }
 
-        bool operator!=(iterator_type const& Rhs) noexcept
+        owned_handle mine()
         {
-            return _stack.get() != Rhs._stack.get() || _index != Rhs._index;
+            return owned_handle(this->release());
         }
 
     private:
-        iterator(raii::rwref<StackT> stack)
-            : _stack(stack)
+        owned_stack(OPENSSL_STACK* sk)
+            : stack_wrapper<T>(sk)
+        {
+        }
+    };
+
+    template <typename T>
+    class stack_iterator
+    {
+    public:
+        stack_iterator() = delete;
+
+        stack_iterator(stack_iterator&&) = default;
+        stack_iterator& operator=(stack_iterator&&) = default;
+
+        stack_iterator(stack_iterator const&) = default;
+        stack_iterator& operator=(stack_iterator const&) = default;
+
+        ~stack_iterator() = default;
+
+        T* operator*() noexcept
+        {
+            return reinterpret_cast<T*>(OPENSSL_sk_value(_sk, _pos));
+        }
+
+        stack_iterator& operator++() noexcept
+        {
+            _pos = std::min(_pos + 1, static_cast<size_t>(OPENSSL_sk_num(_sk)));
+            return *this;
+        }
+
+        bool operator==(stack_iterator const& Rhs) noexcept
+        {
+            return _sk == Rhs._sk && _pos == Rhs._pos;
+        }
+
+        bool operator!=(stack_iterator const& Rhs) noexcept
+        {
+            return _sk != Rhs._sk || _pos != Rhs._pos;
+        }
+
+    private:
+        stack_iterator(OPENSSL_STACK* sk, size_t pos) noexcept
+            : _sk(sk)
+            , _pos(pos)
         {
         }
 
-        raii::rwref<StackT> _stack;
-        size_t _index { 0 };
+        friend class stack_wrapper<T>;
+
+        OPENSSL_STACK* _sk { nullptr };
+        size_t _pos { 0 };
     };
 
-    template <typename StackT>
-    stack::iterator<StackT> begin(raii::owned<StackT> const& stack) noexcept
+    template <typename T>
+    owned_stack<T> make()
     {
-        return stack::iterator<StackT>::begin(stack);
+        return owned_stack<T>::make();
     }
 
-    template <typename StackT>
-    stack::iterator<StackT> end(raii::owned<StackT> const& stack) noexcept
+    template <typename T>
+    owned_stack<typename raii::traits<T>::elem_type> make(raii::owned<T> sk)
     {
-        return stack::iterator<StackT>::end(stack);
+        return owned_stack<typename raii::traits<T>::elem_type>(std::move(sk));
     }
 
-    template <typename StackT>
-    stack::iterator<StackT> begin(raii::rwref<StackT> stack) noexcept
+    template <typename T>
+    owned_stack<typename raii::traits<T>::elem_type> make(T* sk)
     {
-        return stack::iterator<StackT>::begin(stack);
+        return owned_stack<typename raii::traits<T>::elem_type>(sk);
     }
 
-    template <typename StackT>
-    stack::iterator<StackT> end(raii::rwref<StackT> stack) noexcept
-    {
-        return stack::iterator<StackT>::end(stack);
-    }
-
-    /**@}*/
-
-} // namespace stack
-
+} // namespace sk
 } // namespace ossl

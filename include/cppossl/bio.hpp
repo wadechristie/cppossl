@@ -78,8 +78,11 @@ public:
         return from_memory(str.data(), str.size());
     }
 
-    /** @brief Allocate an OpenSSL BIO object from OS file descriptor. */
+    /** @brief Allocate an OpenSSL BIO object from OS file descriptor by reference. */
     static bio from_fd(int fd);
+
+    /** @brief Allocate an OpenSSL BIO object from OS file descriptor.  The BIO assumes ownership of the fd. */
+    static bio take_fd(int fd);
 
     bio(bio&&) = default;
     bio& operator=(bio&&) = default;

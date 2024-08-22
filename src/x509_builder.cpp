@@ -193,11 +193,11 @@ namespace x509 {
 
     builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
     {
-        auto gnames = make<STACK_OF(GENERAL_NAME)>();
+        auto gnames = sk::make<GENERAL_NAME>();
         for (auto const& name : altnames)
-            stack::push(gnames, general_name::copy(name));
+            gnames.push(general_name::copy(name));
 
-        return set_subject_alt_names_ext(gnames);
+        return set_subject_alt_names_ext(gnames.mine());
     }
 
     builder& builder::set_subject_key_id_ext()

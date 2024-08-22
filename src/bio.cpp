@@ -161,6 +161,14 @@ bio bio::from_fd(int fd)
     return bio { std::move(fdbio) };
 } // LCOV_EXCL_LINE
 
+bio bio::take_fd(int fd)
+{
+    owned<::BIO> fdbio { BIO_new_fd(fd, BIO_CLOSE) };
+    if (fdbio == nullptr) // LCOV_EXCL_LINE
+        CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to allocate OpenSSL fd BIO."); // LCOV_EXCL_LINE
+    return bio { std::move(fdbio) };
+} // LCOV_EXCL_LINE
+
 void bio::push(bio_filter b)
 {
     std::swap(_bio, b._bio);
