@@ -52,14 +52,16 @@ namespace sk {
         void push(raii::owned<T> value)
         {
             if (OPENSSL_sk_push(_sk, value.get()) <= 0)
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to push stack element.");
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failure occurred attempting to push stack element.");
             (void)value.release();
         }
 
         void unshift(raii::owned<T> value)
         {
             if (OPENSSL_sk_unshift(_sk, value.get()) <= 0)
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to unshift stack element.");
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failure occurred attempting to unshift stack element.");
             (void)value.release();
         }
 
@@ -67,7 +69,7 @@ namespace sk {
         {
             void* v = OPENSSL_sk_pop(_sk);
             if (v == nullptr)
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to pop stack element.");
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to pop stack element."); // LCOV_EXCL_LINE
             return raii::owned<T>(reinterpret_cast<T*>(v));
         }
 
@@ -75,7 +77,8 @@ namespace sk {
         {
             void* v = OPENSSL_sk_shift(_sk);
             if (v == nullptr)
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failure occurred attempting to shift stack element.");
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failure occurred attempting to shift stack element.");
             return raii::owned<T>(reinterpret_cast<T*>(v));
         }
 
@@ -137,7 +140,7 @@ namespace sk {
         {
             OPENSSL_STACK* sk = OPENSSL_sk_new_null();
             if (sk == nullptr)
-                throw std::bad_alloc();
+                throw std::bad_alloc(); // LCOV_EXCL_LINE
             return owned_stack<T>(sk);
         }
 

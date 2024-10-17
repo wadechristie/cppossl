@@ -32,6 +32,19 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
         REQUIRE_FALSE(sk.empty());
     }
 
+    SECTION("Unshift")
+    {
+        constexpr size_t count = 10;
+        for (size_t i = 1; i <= count; ++i)
+        {
+            REQUIRE_NOTHROW(sk.unshift(ossl::make<asn1::UTF8STRING>("String Value")));
+            REQUIRE(sk.size() == i);
+        }
+
+        REQUIRE(sk.size() > 0);
+        REQUIRE_FALSE(sk.empty());
+    }
+
     SECTION("Pop")
     {
         REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
@@ -39,6 +52,17 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
 
         ossl::owned<::ASN1_STRING> s;
         REQUIRE_NOTHROW(s = sk.pop());
+        REQUIRE(sk.empty());
+        REQUIRE(s);
+    }
+
+    SECTION("Shift")
+    {
+        REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
+        REQUIRE_FALSE(sk.empty());
+
+        ossl::owned<::ASN1_STRING> s;
+        REQUIRE_NOTHROW(s = sk.shift());
         REQUIRE(sk.empty());
         REQUIRE(s);
     }
