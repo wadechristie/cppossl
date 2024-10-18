@@ -83,6 +83,7 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder_v2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_extension.cpp

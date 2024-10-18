@@ -112,7 +112,7 @@ namespace x509 {
          * @param[in] usage A set of usage flags.
          * @throws ossl::openssl_error
          */
-        builder& set_key_usage_ext(std::string_view const& usagestr, bool critical = false);
+        builder& set_key_usage_ext(char const* usagestr, bool critical = false);
 
         builder& set_key_usage_ext(raii::roref<::ASN1_BIT_STRING> usage, bool critical = false);
 
@@ -122,7 +122,7 @@ namespace x509 {
          * @param[in] ext_usage a set of ext usage flags.
          * @throws ossl::openssl_error
          */
-        builder& set_ext_key_usage_ext(std::string_view const& usagestr, bool critical = false);
+        builder& set_ext_key_usage_ext(char const* usagestr, bool critical = false);
 
         /**
          * @brief Add the subjectAltNames extension to the X.509 certificate from the given stack of names.
@@ -164,7 +164,7 @@ namespace x509 {
          *
          * @throws ossl::openssl_error
          */
-        builder& set_authority_access_info_ext(std::string_view const& accessinfo);
+        builder& set_authority_access_info_ext(char const* accessinfo);
 
         /**
          * @brief Sign a the current builder context.

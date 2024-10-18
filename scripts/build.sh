@@ -24,6 +24,7 @@ function show_usage()
 EXTRA_PARAMS=()
 
 DO_BUILD="yes"
+DO_DEEP_CLEAN="no"
 DO_CLEAN="no"
 DO_RELEASE="no"
 USE_CLANG="no"
@@ -46,6 +47,11 @@ while (( "$#" )); do
 
         --clean)
             DO_CLEAN="yes"
+            shift
+            ;;
+
+        --deep-clean)
+            DO_DEEP_CLEAN="yes"
             shift
             ;;
 
@@ -89,10 +95,10 @@ while (( "$#" )); do
     esac
 done
 
-# Clean
-if [[ 'yes' == "${DO_CLEAN}" ]] && [[ -e "${BUILD_DIR}" ]]
+# Deep clean
+if [[ 'yes' == "${DO_DEEP_CLEAN}" ]] && [[ -e "${BUILD_DIR}" ]]
 then
-    header 'Clean'
+    header 'Deep Clean'
     rm -rf "${BUILD_DIR}"
     echo 'Done!'
 fi
@@ -155,10 +161,14 @@ fi
 if [[ 'yes' == "${DO_BUILD}" ]]
 then
     pushd "${BUILD_DIR}" || die 'pushd failed!'
-    cmake --build . -- -j "$(nproc)" || die 'Build Error!'
+    if [[ 'yes' == "${DO_CLEAN}" ]]
+    then
+        cmake --build . --target clean || die 'Clean Error!'
+    fi
+    cmake --build . || die 'Build Error!'
     if [[ 'yes' == "${WITH_DOCS}" ]]
     then
-        cmake --build . -- -j "$(nproc)" docs || die 'Build Error!'
+        cmake --build . --target docs || die 'Build Docs Error!'
     fi
     popd || die 'popd failed!'
 fi

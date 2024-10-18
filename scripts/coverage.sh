@@ -36,7 +36,7 @@ done
 
 if [[ 'yes' == "${DO_CLEAN}" ]]
 then
-    BUILD_PARAMS=("--clean" "${BUILD_PARAMS[@]}")
+    BUILD_PARAMS=("--deep-clean" "${BUILD_PARAMS[@]}")
 fi
 
 echo "./scripts/build.sh ${BUILD_PARAMS[@]}"

@@ -6,10 +6,28 @@
 #include <sstream>
 
 #include "cppossl/der.hpp"
+#include "cppossl/object.hpp"
 #include "cppossl/x509_extension.hpp"
 
 namespace ossl {
 namespace x509_extension {
+
+    namespace _ {
+
+        owned<::X509_EXTENSION> ext_from_conf(object::nid const& id, char const* str)
+        {
+            ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, id, str) };
+            if (ext == nullptr)
+            {
+                std::string msg = (std::stringstream()
+                    << "Failed to create X.509 " << object::short_name(id) << " extension object.")
+                                      .str();
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg.c_str()); // LCOV_EXCL_LINE
+            }
+            return ext;
+        }
+
+    } // namespace _
 
     owned<::X509_EXTENSION> make_basic_constraints(bool ca, int pathlen)
     {
@@ -19,27 +37,19 @@ namespace x509_extension {
             ss << ", pathlen:" << pathlen;
         auto const str = ss.str();
 
-        return make_basic_constraints(str);
+        return make_basic_constraints(str.c_str());
     }
 
-    owned<::X509_EXTENSION> make_basic_constraints(std::string_view const& confstr)
+    owned<::X509_EXTENSION> make_basic_constraints(char const* confstr)
     {
-        ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(
-            nullptr, nullptr, NID_basic_constraints, confstr.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create X.509 basicConstraints extension object.");
-
-        return ext;
+        return _::ext_from_conf(object::wellknown_nid::basic_constraints, confstr);
     } // LCOV_EXCL_LINE
 
-    owned<::X509_EXTENSION> make_key_usage(std::string_view const& usagestr, bool critical)
+    owned<::X509_EXTENSION> make_key_usage(char const* confstr, bool critical)
     {
-        ossl::owned<X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_key_usage, usagestr.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create X.509 keyUsage extension object.");
+        ossl::owned<X509_EXTENSION> ext = _::ext_from_conf(object::wellknown_nid::key_usage, confstr);
 
+        // TODO: remove
         if (critical)
         {
             if (!X509_EXTENSION_set_critical(ext.get(), 1))
@@ -50,25 +60,11 @@ namespace x509_extension {
         return ext;
     } // LCOV_EXCL_LINE
 
-    owned<::X509_EXTENSION> make_key_usage(raii::roref<::ASN1_BIT_STRING> usage, bool critical)
+    owned<::X509_EXTENSION> make_ext_key_usage(char const* confstr, bool critical)
     {
-        raii::owned<::ASN1_OCTET_STRING> data = der::encode(usage).to_octet_string();
-        ossl::owned<X509_EXTENSION> ext { X509_EXTENSION_create_by_NID(nullptr, NID_key_usage, critical, data.get()) };
-        assert(ext);
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create X.509 keyUsage extension object.");
+        ossl::owned<X509_EXTENSION> ext = _::ext_from_conf(object::wellknown_nid::ext_key_usage, confstr);
 
-        return ext;
-    } // LCOV_EXCL_LINE
-
-    owned<::X509_EXTENSION> make_ext_key_usage(std::string_view const& usagestr, bool critical)
-    {
-        ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_ext_key_usage, usagestr.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create X.509 extKeyUsage extension object.");
-
+        // TODO: remove
         if (critical)
         {
             if (!X509_EXTENSION_set_critical(ext.get(), 1))
@@ -118,14 +114,9 @@ namespace x509_extension {
         return ext;
     } // LCOV_EXCL_LINE
 
-    owned<::X509_EXTENSION> make_authority_access_info(std::string_view const& accessinfo)
+    owned<::X509_EXTENSION> make_authority_access_info(char const* confstr)
     {
-        ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(nullptr, nullptr, NID_info_access, accessinfo.data()) };
-        if (ext == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
-                "Failed to create X.509 authorityAccessInfo extension object.");
-
-        return ext;
+        return _::ext_from_conf(object::wellknown_nid::info_access, confstr);
     } // LCOV_EXCL_LINE
 
 } // namespace x509_extension
