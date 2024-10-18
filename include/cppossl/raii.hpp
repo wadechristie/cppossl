@@ -27,6 +27,12 @@ namespace raii {
         static_assert(sizeof(T) != sizeof(T), "Missing CPPOSSL RIAA traits specialization.");
     };
 
+    /**
+     * @brief RAII managed OpenSSL object wrapper.
+     *
+     * Like `std::unique_ptr` but customized for OpenSSL integration.  Supports
+     * decay to `rwref<T>` and `roref<T>`.
+     */
     template <typename T>
     class owned
     {
@@ -102,6 +108,9 @@ namespace raii {
             return ret;
         }
 
+        /**
+         * @brief Capture the result of an C style double pointer output parameter.
+         */
         T** capture() noexcept
         {
             destroy();
@@ -120,12 +129,18 @@ namespace raii {
         T* _ptr { nullptr };
     };
 
+    /**
+     * @brief Take ownership of `obj` by instantiating  an `owned<T>` object.
+     */
     template <typename T>
     raii::owned<T> own(T* obj)
     {
         return raii::owned<T> { obj };
     }
 
+    /**
+     * @brief Read/write reference to an OpenSSL object `T*`.
+     */
     template <typename T>
     class rwref
     {
@@ -181,6 +196,9 @@ namespace raii {
         T* _ptr { nullptr };
     };
 
+    /**
+     * @brief Read-only reference to an OpenSSL object `T const*`.
+     */
     template <typename T>
     class roref
     {

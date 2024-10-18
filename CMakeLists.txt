@@ -80,6 +80,7 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/general_name.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl_builder.cpp
@@ -99,6 +100,7 @@ SET(CPPOSSL_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/error.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/evp_pkey.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/general_name.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/object.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/pem.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/raii.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/stack.hpp

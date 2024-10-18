@@ -11,24 +11,24 @@
 
 #include <openssl/err.h>
 
-#define CPPOSSL_THROW_ERRNO(err, msg) throw std::system_error(err, std::system_category(), msg)
+#define CPPOSSL_THROW_ERRNO(__err__, __msg__) throw std::system_error(__err__, std::system_category(), __msg__)
 #ifndef NDEBUG
-#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg)                     \
-    do                                                            \
-    {                                                             \
-        ossl::error_code const ec = ERR_peek_error();             \
-        CPPOSSL_ASSERT(ec != 0);                                  \
-        ERR_clear_error();                                        \
-        throw ::ossl::openssl_error(ec, msg, __LINE__, __FILE__); \
+#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(__msg__)                     \
+    do                                                                \
+    {                                                                 \
+        ossl::error_code const ec = ERR_peek_error();                 \
+        CPPOSSL_ASSERT(ec != 0);                                      \
+        ERR_clear_error();                                            \
+        throw ::ossl::openssl_error(ec, __msg__, __LINE__, __FILE__); \
     } while (0)
 #else
-#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(msg)         \
+#define CPPOSSL_THROW_LAST_OPENSSL_ERROR(__msg__)     \
     do                                                \
     {                                                 \
         ossl::error_code const ec = ERR_peek_error(); \
         CPPOSSL_ASSERT(ec != 0);                      \
         ERR_clear_error();                            \
-        throw ::ossl::openssl_error(ec, msg);         \
+        throw ::ossl::openssl_error(ec, __msg__);     \
     } while (0)
 #endif
 
