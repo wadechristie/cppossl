@@ -8,18 +8,24 @@
 
 #include <openssl/objects.h>
 
+#define WELLKNOWN_NID_TABLE(X)  \
+    X(subject_key_identifier)   \
+    X(key_usage)                \
+    X(subject_alt_name)         \
+    X(basic_constraints)        \
+    X(authority_key_identifier) \
+    X(crl_distribution_points)  \
+    X(ext_key_usage)            \
+    X(info_access)
+
 namespace ossl {
 namespace object {
 
     enum class wellknown_nid : int
     {
-        key_usage = NID_key_usage,
-        subject_alt_name = NID_subject_alt_name,
-        basic_constraints = NID_basic_constraints,
-        authority_key_identifier = NID_authority_key_identifier,
-        crl_distribution_points = NID_crl_distribution_points,
-        ext_key_usage = NID_ext_key_usage,
-        info_access = NID_info_access,
+#define _CASE(NAME) NAME = NID_##NAME,
+        WELLKNOWN_NID_TABLE(_CASE)
+#undef _CASE
     };
 
     class nid
@@ -27,34 +33,47 @@ namespace object {
     public:
         static nid make(int id);
 
+        static nid from_object(::ASN1_OBJECT const* obj);
+
+#define _CASE(NAME) static nid const& NAME();
+        WELLKNOWN_NID_TABLE(_CASE)
+#undef _CASE
+
         inline nid(wellknown_nid id)
+            : _nid(static_cast<std::underlying_type_t<wellknown_nid>>(id))
         {
-            _nid = static_cast<std::underlying_type_t<wellknown_nid>>(id);
         }
 
-        nid(nid&&) = delete;
-        nid& operator=(nid&&) = delete;
+        nid(nid&&) = default;
+        nid& operator=(nid&&) = default;
 
         nid(nid const&) = default;
         nid& operator=(nid const&) = default;
 
-        ~nid()
+        inline ~nid()
         {
-            _nid = -1;
         }
 
-        inline operator int()
-        {
-            return _nid;
-        }
+        // inline operator int()
+        // {
+        //     return _nid;
+        // }
 
         inline operator int() const
         {
             return _nid;
         }
 
+        inline bool is_undefined() const
+        {
+            return _nid == NID_undef;
+        }
+
     private:
-        explicit nid(int id);
+        inline explicit nid(int id)
+            : _nid(id)
+        {
+        }
 
         int _nid { NID_undef };
     };

@@ -8,16 +8,47 @@
 
 #include <cppossl/asn1_time.hpp>
 #include <cppossl/evp_pkey.hpp>
+#include <cppossl/general_name.hpp>
+#include <cppossl/object.hpp>
 #include <cppossl/raii.hpp>
+#include <cppossl/stack.hpp>
 #include <cppossl/x509.hpp>
 #include <cppossl/x509_extension.hpp>
 #include <cppossl/x509_name.hpp>
+#include <cppossl/x509_req.hpp>
 
 namespace ossl {
 namespace x509 {
     namespace v2 {
 
         namespace builder {
+
+            class copy_extensions
+            {
+            public:
+                inline static copy_extensions none()
+                {
+                    return copy_extensions {};
+                };
+
+                inline static copy_extensions all()
+                {
+                    static copy_extensions singleton;
+                    return singleton;
+                };
+
+                inline copy_extensions(std::initializer_list<object::nid> nids)
+                    : _nids(nids)
+                {
+                }
+
+                ~copy_extensions() = default;
+
+            private:
+                copy_extensions() = default;
+
+                std::vector<object::nid> _nids;
+            };
 
             class context
             {
@@ -32,17 +63,10 @@ namespace x509 {
 
                 ~context() = default;
 
-                // inline void operator()(std::function<void(context&)> mutate)
-                // {
-                //     mutate(*this);
-                // }
-
                 inline ::X509* get() const
                 {
                     return _x509.get();
                 }
-
-                // void reset();
 
             private:
                 inline context(owned<::X509>& cert)
@@ -67,6 +91,8 @@ namespace x509 {
                 std::function<void(context&)> func);
 
             owned<::X509> selfsign(ossl::evp_pkey::roref key, EVP_MD const* digest, std::function<void(context&)> func);
+
+            void starting_from(context& ctx, ossl::x509_req::roref req);
 
             /**
              * @brief Set X.509 serial number
@@ -95,13 +121,6 @@ namespace x509 {
              * @throws ossl::openssl_error
              */
             void set_subject(context& ctx, ossl::x509_name::roref name);
-
-            /**
-             * @brief Set X.509 issuer field.
-             *
-             * @throws ossl::openssl_error
-             */
-            void set_issuer(context& ctx, ossl::x509_name::roref name);
 
             /**
              * @brief Set X.509 notBefore field.
@@ -133,9 +152,10 @@ namespace x509 {
              * @param[in] pathlen set an optional pathlen to a nonnegative value.
              * @throws ossl::openssl_error
              */
-            inline void set_basic_constraints_ext(context& ctx, bool ca, int pathlen = -1)
+            inline void set_basic_constraints(context& ctx, bool ca, int pathlen = -1)
             {
-                add_extension(ctx, x509_extension::make_basic_constraints(ca, pathlen));
+                auto ext = x509_extension::make_basic_constraints(ca, pathlen);
+                add_extension(ctx, std::move(ext));
             }
 
             /**
@@ -148,7 +168,8 @@ namespace x509 {
              */
             inline void set_key_usage(context& ctx, char const* confstr)
             {
-                add_extension(ctx, x509_extension::make_key_usage(confstr));
+                auto ext = x509_extension::make_key_usage(confstr);
+                add_extension(ctx, std::move(ext));
             }
 
             /**
@@ -156,12 +177,65 @@ namespace x509 {
              *
              * @see `https://docs.openssl.org/3.0/man5/x509v3_config/#extended-key-usage`
              *
-             * @param[in] confstr OpenSSL keyUsage configuration string.
+             * @param[in] confstr OpenSSL extendedKeyUsage configuration string.
              * @throws ossl::openssl_error
              */
             inline void set_ext_key_usage(context& ctx, char const* confstr)
             {
-                add_extension(ctx, x509_extension::make_ext_key_usage(confstr));
+                auto ext = x509_extension::make_ext_key_usage(confstr);
+                add_extension(ctx, std::move(ext));
+            }
+
+            /**
+             * @brief Add the subjectAltNames extension to the X.509 certificate from the given stack of names.
+             *
+             * @throws ossl::openssl_error
+             */
+            void set_subject_alt_names(context& ctx, owned<STACK_OF(GENERAL_NAME)> const& altnames);
+
+            /**
+             * @brief Add the subjectKeyIdentifier extension to the certificate.
+             *
+             * `set_public_key()` should be called prior this function.
+             *
+             * @throws ossl::openssl_error
+             */
+            void set_subject_key_id(context& ctx);
+
+            /**
+             * @brief Add the authorityKeyIdentifier extension to the certificate.
+             *
+             * @throws ossl::openssl_error
+             */
+            inline void set_authority_key_id(context& ctx, x509::roref cacert)
+            {
+                auto ext = x509_extension::make_authority_key_id(cacert);
+                add_extension(ctx, std::move(ext));
+            }
+
+            /**
+             * @brief Add the crlDistributionPoints extension to the X.509 certificate.
+             *
+             * @throws ossl::openssl_error
+             */
+            inline void set_crl_distribution_point(context& ctx, raii::roref<STACK_OF(DIST_POINT)> crldists)
+            {
+                auto ext = x509_extension::make_crl_distribution_point(crldists);
+                add_extension(ctx, std::move(ext));
+            }
+
+            /**
+             * @brief Add the authorityInfoAccess extension to the X.509  certificate.
+             *
+             * @see `https://docs.openssl.org/3.0/man5/x509v3_config/#authority-info-access`
+             *
+             * @param[in] confstr OpenSSL authorityInfoAccess configuration string.
+             * @throws ossl::openssl_error
+             */
+            inline void set_authority_access_info(context& ctx, char const* confstr)
+            {
+                auto ext = x509_extension::make_authority_access_info(confstr);
+                add_extension(ctx, std::move(ext));
             }
 
         } // namespace v2

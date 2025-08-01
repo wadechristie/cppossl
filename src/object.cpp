@@ -9,12 +9,13 @@
 namespace ossl {
 namespace object {
 
-    nid nid::make(int id)
-    {
-        return nid(id);
+    namespace _ {
+#define _CASE(NAME) static nid const NAME(wellknown_nid::NAME);
+        WELLKNOWN_NID_TABLE(_CASE)
+#undef _CASE
     }
 
-    nid::nid(int id)
+    nid nid::make(int id)
     {
         ::ASN1_OBJECT* obj = OBJ_nid2obj(id);
         if (obj == nullptr)
@@ -22,8 +23,22 @@ namespace object {
             CPPOSSL_THROW_ERRNO(EINVAL, "Invalid object NID.");
         }
 
-        _nid = id;
+        return nid(id);
     }
+
+    nid nid::from_object(::ASN1_OBJECT const* obj)
+
+    {
+        return nid(OBJ_obj2nid(obj));
+    }
+
+#define _CASE(NAME)        \
+    nid const& nid::NAME() \
+    {                      \
+        return _::NAME;    \
+    }
+    WELLKNOWN_NID_TABLE(_CASE)
+#undef _CASE
 
     std::string_view short_name(nid const& id)
     {

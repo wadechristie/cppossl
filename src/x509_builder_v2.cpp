@@ -14,7 +14,7 @@ namespace x509 {
             namespace _ {
 
                 /** @brief Remove all extensions matching `nid` from `cert`. */
-                void remove_ext_by_nid(rwref x509, int const nid)
+                void remove_ext_by_nid(rwref x509, object::nid const& nid)
                 {
                     for (int idx = -1; (idx = X509_get_ext_by_NID(x509.get(), nid, -1)) >= 0; idx = -1)
                     {
@@ -26,10 +26,16 @@ namespace x509 {
                 void add_extension(rwref x509, raii::roref<::X509_EXTENSION> ext)
                 {
                     ASN1_OBJECT* obj = X509_EXTENSION_get_object(const_cast<::X509_EXTENSION*>(ext.get()));
-                    remove_ext_by_nid(x509, OBJ_obj2nid(obj));
+                    remove_ext_by_nid(x509, object::nid::from_object(obj));
                     if (X509_add_ext(x509.get(), const_cast<::X509_EXTENSION*>(ext.get()), -1) < 0)
                         CPPOSSL_THROW_LAST_OPENSSL_ERROR(
                             "Failed to add new extension to X.509 object."); // LCOV_EXCL_LINE
+                }
+
+                void set_issuer(context& ctx, ossl::x509_name::roref name)
+                {
+                    if (!X509_set_issuer_name(ctx.get(), name.get()))
+                        CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate issuer."); // LCOV_EXCL_LINE
                 }
 
             } // namespace _
@@ -51,7 +57,7 @@ namespace x509 {
                 if (pubkey == nullptr)
                     CPPOSSL_THROW_ERRNO(EINVAL, "X.509 public key was not set"); // LCOV_EXCL_LINE
 
-                set_issuer(ctx, X509_get_subject_name(issuer_cert.get()));
+                _::set_issuer(ctx, X509_get_subject_name(issuer_cert.get()));
 
                 if (X509_sign(cert.get(), const_cast<::EVP_PKEY*>(issuer_key.get()), digest) <= 0)
                     CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 certificate."); // LCOV_EXCL_LINE
@@ -90,7 +96,7 @@ namespace x509 {
                 }
 
                 // set issuer equal to subject
-                set_issuer(ctx, X509_get_subject_name(cert.get()));
+                _::set_issuer(ctx, X509_get_subject_name(cert.get()));
 
                 // sign
                 if (X509_sign(cert.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
@@ -131,12 +137,6 @@ namespace x509 {
                     CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate subject."); // LCOV_EXCL_LINE
             }
 
-            void set_issuer(context& ctx, ossl::x509_name::roref name)
-            {
-                if (!X509_set_issuer_name(ctx.get(), name.get()))
-                    CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate issuer."); // LCOV_EXCL_LINE
-            }
-
             void set_not_before(context& ctx, asn1::time::roref not_before)
             {
                 if (!X509_set1_notBefore(ctx.get(), not_before.get()))
@@ -152,6 +152,37 @@ namespace x509 {
             void add_extension(context& ctx, owned<::X509_EXTENSION> ext)
             {
                 _::add_extension(x509::rwref(ctx.get()), std::move(ext));
+            }
+
+            void set_subject_alt_names(context& ctx, owned<STACK_OF(GENERAL_NAME)> const& altnames)
+            {
+                owned<::X509_EXTENSION> ext { X509V3_EXT_i2d(NID_subject_alt_name, /*crit=*/0, altnames.get()) };
+                if (ext == nullptr)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                        "Failed to create OpenSSL subject alt name X.509 extension object.");
+
+                add_extension(ctx, std::move(ext));
+            }
+
+            void set_subject_key_id(context& ctx)
+            {
+                owned<::EVP_PKEY> const pubkey { X509_get_pubkey(ctx.get()) };
+                if (pubkey == nullptr)
+                    CPPOSSL_THROW_ERRNO(
+                        EINVAL, "Cannot set subject key identifier extension prior to setting the public key");
+
+                X509V3_CTX x509ctx {};
+                X509V3_set_ctx_nodb(&x509ctx);
+                X509V3_set_ctx(&x509ctx, nullptr, ctx.get(), nullptr, nullptr, 0);
+
+                char const* value = "hash";
+                ossl::owned<::X509_EXTENSION> ext { X509V3_EXT_conf_nid(
+                    nullptr, &x509ctx, NID_subject_key_identifier, const_cast<char*>(value)) };
+                if (ext == nullptr)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                        "Failed to create X.509 subjectKeyIdentifier extension object."); // LCOV_EXCL_LINE
+
+                add_extension(ctx, std::move(ext));
             }
 
         } // namespace builder

@@ -114,8 +114,6 @@ namespace x509 {
          */
         builder& set_key_usage_ext(char const* usagestr, bool critical = false);
 
-        builder& set_key_usage_ext(raii::roref<::ASN1_BIT_STRING> usage, bool critical = false);
-
         /**
          * @brief Add the extKeyUsage extension to the X.509 certificate.
          *

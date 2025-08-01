@@ -245,6 +245,15 @@ namespace sk {
     }
 
     template <typename T>
+    owned_stack<T> make(std::initializer_list<owned<::GENERAL_NAME>>& init)
+    {
+        auto sk = owned_stack<T>::make();
+        for (auto& elem : init)
+            sk.push(std::move(elem));
+        return sk;
+    }
+
+    template <typename T>
     owned_stack<typename raii::traits<T>::elem_type> make(raii::owned<T> sk)
     {
         return owned_stack<typename raii::traits<T>::elem_type>(std::move(sk));
