@@ -184,14 +184,43 @@ namespace x509 {
         return *this;
     }
 
-    builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
+    builder& builder::set_subject_alt_names_ext(std::vector<saltname> const& altnames)
     {
-        auto gnames = sk::make<GENERAL_NAME>();
+        auto names = sk::make<GENERAL_NAME>();
         for (auto const& name : altnames)
-            gnames.push(general_name::copy(name));
+            names.push(general_name::copy(name));
 
-        return set_subject_alt_names_ext(gnames.mine());
+        return set_subject_alt_names_ext(names.mine());
     }
+
+    builder& builder::set_subject_alt_names_ext(std::initializer_list<saltname> const& altnames)
+    {
+        auto names = sk::make<GENERAL_NAME>();
+        for (auto const& name : altnames)
+            names.push(general_name::copy(name));
+
+        return set_subject_alt_names_ext(names.mine());
+    }
+
+    // builder& builder::set_subject_alt_names_ext(owned<STACK_OF(GENERAL_NAME)> const& altnames)
+    // {
+    //     owned<::X509_EXTENSION> ext { X509V3_EXT_i2d(NID_subject_alt_name, /*crit=*/0, altnames.get()) };
+    //     if (ext == nullptr)
+    //         CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+    //             "Failed to create OpenSSL subject alt name X.509 extension object.");
+
+    //     _::add_extension(_x509, ext);
+    //     return *this;
+    // }
+
+    // builder& builder::set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames)
+    // {
+    //     auto gnames = sk::make<GENERAL_NAME>();
+    //     for (auto const& name : altnames)
+    //         gnames.push(general_name::copy(name));
+
+    //     return set_subject_alt_names_ext(gnames.mine());
+    // }
 
     builder& builder::set_subject_key_id_ext()
     {

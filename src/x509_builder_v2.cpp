@@ -32,10 +32,51 @@ namespace x509 {
                             "Failed to add new extension to X.509 object."); // LCOV_EXCL_LINE
                 }
 
+                template <typename IterT, bool CopyAll = false>
+                void copy_extensions(
+                    x509::rwref x509, x509_req::roref& req, IterT const& begin, IterT const& end, bool overwrite)
+                {
+                    ossl::owned<STACK_OF(X509_EXTENSION)> req_exts { X509_REQ_get_extensions(
+                        const_cast<::X509_REQ*>(req.get())) };
+                    if (req_exts == nullptr)
+                        return;
+
+                    for (int i = 0; i < sk_X509_EXTENSION_num(req_exts.get()); ++i)
+                    {
+                        X509_EXTENSION* ext = sk_X509_EXTENSION_value(req_exts.get(), i);
+                        ASN1_OBJECT const* obj = X509_EXTENSION_get_object(ext);
+                        object::nid const obj_nid = object::nid::from_object(obj);
+                        int const idx = X509_get_ext_by_NID(x509.get(), OBJ_obj2nid(obj), -1);
+
+                        if (idx >= 0)
+                        {
+                            if constexpr (!CopyAll)
+                            {
+                                if (!overwrite)
+                                    continue;
+                            }
+
+                            remove_ext_by_nid(x509, obj_nid);
+                        }
+
+                        add_extension(x509, ext);
+                    }
+                }
+
                 void set_issuer(context& ctx, ossl::x509_name::roref name)
                 {
                     if (!X509_set_issuer_name(ctx.get(), name.get()))
                         CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 certificate issuer."); // LCOV_EXCL_LINE
+                }
+
+                template <typename IterT>
+                owned<STACK_OF(GENERAL_NAME)> make_stack(IterT const& begin, IterT const& end)
+                {
+                    auto names = sk::make<GENERAL_NAME>();
+                    std::for_each(
+                        begin, end, [&names](auto const& name) -> void { names.push(general_name::copy(name)); });
+
+                    return names.mine();
                 }
 
             } // namespace _
@@ -109,6 +150,86 @@ namespace x509 {
                 return cert;
             }
 
+            ossl::owned<::X509> sign(ossl::x509_req::roref req,
+                ossl::x509::roref issuer_cert,
+                ossl::evp_pkey::roref issuer_key,
+                EVP_MD const* digest,
+                std::function<void(context&)> func)
+            {
+                abort();
+            }
+
+            ossl::owned<::X509> selfsign(ossl::x509_req::roref req,
+                ossl::evp_pkey::roref key,
+                EVP_MD const* digest,
+                std::function<void(context&, ossl::x509_req::roref&)> func)
+            {
+                CPPOSSL_ASSERT(digest != nullptr);
+
+                auto cert = make<::X509>();
+                context ctx(cert);
+
+                // default to a random serial number
+                set_random_serialno(ctx);
+
+                // default notBefore & notAfter to now
+                auto const now = asn1::time::now();
+                set_not_before(ctx, now);
+                set_not_after(ctx, now);
+
+                // copy subject from the request
+                set_subject(ctx, X509_REQ_get_subject_name(req.get()));
+
+                // copy public key from the request
+                ossl::owned<EVP_PKEY> pubkey(X509_REQ_get_pubkey(const_cast<::X509_REQ*>(req.get())));
+                if (pubkey == nullptr)
+                    CPPOSSL_THROW_ERRNO(EINVAL, "X.509 certificate request is missing a public key."); // LCOV_EXCL_LINE
+                set_public_key(ctx, pubkey);
+
+                // execute caller callback
+                func(ctx, req);
+
+                // verify public key is set correctly
+                owned<::EVP_PKEY> const pubkey2 { X509_get_pubkey(cert.get()) };
+                CPPOSSL_ASSERT(pubkey2 != nullptr);
+                if (!evp_pkey::equal(pubkey, pubkey2))
+                    CPPOSSL_THROW_ERRNO(
+                        EINVAL, "X.509 certificate public key was set but it does not match signing key.");
+
+                // set issuer equal to subject
+                _::set_issuer(ctx, X509_get_subject_name(cert.get()));
+
+                // sign
+                if (X509_sign(cert.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 certificate."); // LCOV_EXCL_LINE
+
+                // verify
+                if (!ossl::x509::check_key(cert.get(), key))
+                    throw std::runtime_error("Failed to verify X.509 the self-signed certificate."); // LCOV_EXCL_LINE
+
+                return cert;
+            }
+
+            void copy_extensions::all(context& ctx, ossl::x509_req::roref& req)
+            {
+                std::array<object::nid, 0> empty;
+                _::copy_extensions<decltype(empty)::const_iterator, true>(
+                    ctx.get(), req, empty.cbegin(), empty.cend(), /*overwrite=*/false);
+            }
+
+            void copy_extensions::some(
+                context& ctx, ossl::x509_req::roref& req, std::initializer_list<object::nid> nids)
+            {
+                _::copy_extensions<decltype(nids)::const_iterator, false>(
+                    ctx.get(), req, nids.begin(), nids.end(), /*overwrite=*/false);
+            }
+
+            void copy_extensions::some(context& ctx, ossl::x509_req::roref& req, std::vector<object::nid> nids)
+            {
+                _::copy_extensions<decltype(nids)::const_iterator, false>(
+                    ctx.get(), req, nids.begin(), nids.end(), /*overwrite=*/false);
+            }
+
             void set_serialno(context& ctx, ossl::raii::roref<::BIGNUM> serial)
             {
                 if (BN_to_ASN1_INTEGER(serial.get(), X509_get_serialNumber(ctx.get())) == 0)
@@ -162,6 +283,16 @@ namespace x509 {
                         "Failed to create OpenSSL subject alt name X.509 extension object.");
 
                 add_extension(ctx, std::move(ext));
+            }
+
+            void set_subject_alt_names(context& ctx, std::initializer_list<saltname> const& altnames)
+            {
+                return set_subject_alt_names(ctx, _::make_stack(altnames.begin(), altnames.end()));
+            }
+
+            void set_subject_alt_names(context& ctx, std::vector<saltname> const& altnames)
+            {
+                return set_subject_alt_names(ctx, _::make_stack(altnames.cbegin(), altnames.cend()));
             }
 
             void set_subject_key_id(context& ctx)

@@ -66,7 +66,7 @@ namespace object {
 
         inline bool is_undefined() const
         {
-            return _nid == NID_undef;
+            return _nid <= NID_undef;
         }
 
     private:

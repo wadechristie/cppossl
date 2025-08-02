@@ -14,41 +14,14 @@
 #include <cppossl/stack.hpp>
 #include <cppossl/x509.hpp>
 #include <cppossl/x509_extension.hpp>
-#include <cppossl/x509_name.hpp>
 #include <cppossl/x509_req.hpp>
+#include <cppossl/x509_subject_alt_name.hpp>
 
 namespace ossl {
 namespace x509 {
     namespace v2 {
 
         namespace builder {
-
-            class copy_extensions
-            {
-            public:
-                inline static copy_extensions none()
-                {
-                    return copy_extensions {};
-                };
-
-                inline static copy_extensions all()
-                {
-                    static copy_extensions singleton;
-                    return singleton;
-                };
-
-                inline copy_extensions(std::initializer_list<object::nid> nids)
-                    : _nids(nids)
-                {
-                }
-
-                ~copy_extensions() = default;
-
-            private:
-                copy_extensions() = default;
-
-                std::vector<object::nid> _nids;
-            };
 
             class context
             {
@@ -82,6 +55,17 @@ namespace x509 {
                 friend owned<::X509> selfsign(
                     ossl::evp_pkey::roref key, EVP_MD const* digest, std::function<void(context&)> func);
 
+                friend ossl::owned<::X509> sign(ossl::x509_req::roref,
+                    ossl::x509::roref issuer_cert,
+                    ossl::evp_pkey::roref issuer_key,
+                    EVP_MD const* digest,
+                    std::function<void(context&, ossl::x509_req::roref&)> func);
+
+                friend owned<::X509> selfsign(ossl::x509_req::roref req,
+                    ossl::evp_pkey::roref key,
+                    EVP_MD const* digest,
+                    std::function<void(context&, ossl::x509_req::roref&)> func);
+
                 x509::rwref _x509;
             };
 
@@ -90,9 +74,31 @@ namespace x509 {
                 EVP_MD const* digest,
                 std::function<void(context&)> func);
 
-            owned<::X509> selfsign(ossl::evp_pkey::roref key, EVP_MD const* digest, std::function<void(context&)> func);
+            ossl::owned<::X509> selfsign(
+                ossl::evp_pkey::roref key, EVP_MD const* digest, std::function<void(context&)> func);
 
-            void starting_from(context& ctx, ossl::x509_req::roref req);
+            ossl::owned<::X509> sign(ossl::x509_req::roref req,
+                ossl::x509::roref issuer_cert,
+                ossl::evp_pkey::roref issuer_key,
+                EVP_MD const* digest,
+                std::function<void(context&, ossl::x509_req::roref&)> func);
+
+            ossl::owned<::X509> selfsign(ossl::x509_req::roref req,
+                ossl::evp_pkey::roref key,
+                EVP_MD const* digest,
+                std::function<void(context&, ossl::x509_req::roref&)> func);
+
+            class copy_extensions
+            {
+            public:
+                static void all(context& ctx, ossl::x509_req::roref& req);
+
+                static void some(context& ctx, ossl::x509_req::roref& req, std::initializer_list<object::nid> nids);
+                static void some(context& ctx, ossl::x509_req::roref& req, std::vector<object::nid> nids);
+
+            private:
+                copy_extensions() = default;
+            };
 
             /**
              * @brief Set X.509 serial number
@@ -193,6 +199,9 @@ namespace x509 {
              */
             void set_subject_alt_names(context& ctx, owned<STACK_OF(GENERAL_NAME)> const& altnames);
 
+            void set_subject_alt_names(context& ctx, std::initializer_list<saltname> const& altnames);
+            void set_subject_alt_names(context& ctx, std::vector<saltname> const& altnames);
+
             /**
              * @brief Add the subjectKeyIdentifier extension to the certificate.
              *
@@ -238,7 +247,7 @@ namespace x509 {
                 add_extension(ctx, std::move(ext));
             }
 
-        } // namespace v2
-    } // namespace builder
+        } // namespace builder
+    } // namespace v2
 } // namespace x509
 } // namespace ossl

@@ -223,7 +223,11 @@ namespace raii {
         roref(roref&&) = delete;
         roref& operator=(roref&&) = delete;
 
-        roref(roref const&) = default;
+        roref(roref const& ref)
+            : _ptr(ref.get())
+        {
+        }
+
         roref& operator=(roref const&) = delete;
 
         ~roref() noexcept

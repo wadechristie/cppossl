@@ -17,6 +17,7 @@ namespace object {
 
     nid nid::make(int id)
     {
+        CPPOSSL_ASSERT(id >= 0);
         ::ASN1_OBJECT* obj = OBJ_nid2obj(id);
         if (obj == nullptr)
         {

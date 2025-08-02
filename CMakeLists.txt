@@ -91,6 +91,7 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_req_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_req.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_subject_alt_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509.cpp
 )
 
@@ -113,6 +114,7 @@ SET(CPPOSSL_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_req_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_req.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_store.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_subject_alt_name.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509.hpp
 )
 

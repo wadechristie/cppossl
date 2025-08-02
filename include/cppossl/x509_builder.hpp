@@ -9,12 +9,13 @@
 #include <initializer_list>
 #include <string_view>
 
-#include "cppossl/general_name.hpp"
 #include <cppossl/asn1_time.hpp>
 #include <cppossl/evp_pkey.hpp>
+#include <cppossl/general_name.hpp>
 #include <cppossl/x509.hpp>
 #include <cppossl/x509_name.hpp>
 #include <cppossl/x509_req.hpp>
+#include <cppossl/x509_subject_alt_name.hpp>
 
 namespace ossl {
 namespace x509 {
@@ -134,7 +135,10 @@ namespace x509 {
          *
          * @throws ossl::openssl_error
          */
-        builder& set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames);
+        builder& set_subject_alt_names_ext(std::initializer_list<saltname> const& altnames);
+        builder& set_subject_alt_names_ext(std::vector<saltname> const& altnames);
+
+        // builder& set_subject_alt_names_ext(std::initializer_list<owned<::GENERAL_NAME>> const& altnames);
 
         /**
          * @brief Add the subjectKeyIdentifier extension to the certificate.

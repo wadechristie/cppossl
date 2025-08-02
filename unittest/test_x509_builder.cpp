@@ -263,7 +263,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Subject Alternative Names",
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
             builder.set_subject(name("Subject Alt Name"))
                 .set_subject_alt_names_ext({
-                    general_name::make_dns("example.com"),
+                    x509::saltname::dns("example.com"),
                 });
         });
         REQUIRE(cert);
@@ -278,10 +278,10 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Subject Alternative Names",
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
             builder.set_subject(name("Subject Alt Name"))
                 .set_subject_alt_names_ext({
-                    general_name::make_ip("10.0.0.1"),
-                    general_name::make_ip((in_addr) { .s_addr = htonl(INADDR_LOOPBACK) }),
-                    general_name::make_ip("::ffff:10.0.0.1"),
-                    general_name::make_ip(in6addr_loopback),
+                    x509::saltname::ip("10.0.0.1"),
+                    x509::saltname::ip((in_addr) { .s_addr = htonl(INADDR_LOOPBACK) }),
+                    x509::saltname::ip("::ffff:10.0.0.1"),
+                    x509::saltname::ip(in6addr_loopback),
                 });
         });
         REQUIRE(cert);
@@ -299,7 +299,7 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Subject Alternative Names",
         auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
             builder.set_subject(name("Subject Alt Name"))
                 .set_subject_alt_names_ext({
-                    general_name::make_email("email@example.com"),
+                    x509::saltname::email("email@example.com"),
                 });
         });
         REQUIRE(cert);
@@ -307,6 +307,21 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Subject Alternative Names",
         auto const cert_text = x509::print_text(cert);
         REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
         REQUIRE_THAT(cert_text, ContainsSubstring("email:email@example.com"));
+    }
+
+    SECTION("UPN")
+    {
+        auto cert = x509::selfsign(key, unittest::default_digest(), [this](x509::builder& builder) {
+            builder.set_subject(name("Subject Alt Name"))
+                .set_subject_alt_names_ext({
+                    x509::saltname::upn("user@example.com"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("UPN::user@example.com"));
     }
 }
 

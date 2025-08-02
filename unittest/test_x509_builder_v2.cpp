@@ -7,6 +7,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <cppossl/builder/x509_builder.hpp>
+#include <cppossl/x509_req_builder.hpp>
 
 #include "common.hpp"
 
@@ -133,7 +134,7 @@ TEST_CASE("v2 X.509 Builder - Key Usage", "[x509][builder]")
     }
 }
 
-TEST_CASE("X.509 Builder - Extended Key Usage Identifier", "[x509][builder]")
+TEST_CASE("X.509 Builder v2 - Extended Key Usage Identifier", "[x509][builder]")
 {
     auto const key = unittest::rsa_key_one.load();
 
@@ -166,7 +167,7 @@ TEST_CASE("X.509 Builder - Extended Key Usage Identifier", "[x509][builder]")
     SECTION("Invalid Usage String")
     {
         REQUIRE_THROWS_AS(x509::v2::builder::selfsign(key,
-                              EVP_sha256(),
+                              unittest::default_digest(),
                               [](x509::v2::builder::context& ctx) {
                                   set_subject(ctx, name("Extended Key Usage"));
                                   set_ext_key_usage(ctx, "serverAuth, invalidUsage");
@@ -196,7 +197,7 @@ TEST_CASE("v2 X.509 Builder - Subject Key Identifier", "[x509][builder]")
     SECTION("Public Key Not Set")
     {
         REQUIRE_THROWS_AS((void)x509::v2::builder::selfsign(key,
-                              EVP_sha256(),
+                              unittest::default_digest(),
                               [](x509::v2::builder::context& ctx) {
                                   set_subject(ctx, name("Subject Key Identifier"));
                                   set_subject_key_id(ctx);
@@ -205,7 +206,7 @@ TEST_CASE("v2 X.509 Builder - Subject Key Identifier", "[x509][builder]")
     }
 }
 
-TEST_CASE("X.509 Builder - Authority Key Identifier", "[x509][builder]")
+TEST_CASE("X.509 Builder v2 - Authority Key Identifier", "[x509][builder]")
 {
     auto const signing_key = unittest::rsa_key_one.load();
     auto const child_key = unittest::rsa_key_two.load();
@@ -232,4 +233,122 @@ TEST_CASE("X.509 Builder - Authority Key Identifier", "[x509][builder]")
 
     auto const cert_text = x509::print_text(child_cert);
     REQUIRE_THAT(cert_text, ContainsSubstring("509v3 Authority Key Identifier: \n"));
+}
+
+TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
+{
+    auto const key = unittest::rsa_key_one.load();
+
+    SECTION("DNS Name")
+    {
+        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::dns("example.com"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("DNS:example.com"));
+    }
+
+    SECTION("IP Address Name")
+    {
+        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::ip("10.0.0.1"),
+                    x509::saltname::ip((in_addr) { .s_addr = htonl(INADDR_LOOPBACK) }),
+                    x509::saltname::ip("::ffff:10.0.0.1"),
+                    x509::saltname::ip(in6addr_loopback),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("IP Address:10.0.0.1"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("IP Address:127.0.0.1"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("IP Address:0:0:0:0:0:FFFF:A00:1"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("IP Address:0:0:0:0:0:0:0:1"));
+    }
+
+    SECTION("Email Address Name")
+    {
+        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::email("email@example.com"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("email:email@example.com"));
+    }
+
+    SECTION("UPN")
+    {
+        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::upn("user@example.com"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("UPN::user@example.com"));
+    }
+}
+
+TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
+{
+    auto const key = unittest::rsa_key_one.load();
+    auto const req = x509_req::sign(key, unittest::default_digest(), [](x509_req::builder& builder) {
+        builder.set_subject(name("Cert Request"))
+            .set_key_usage_ext("digitalSignature, keyEncipherment, keyAgreement", /*critical=*/true)
+            .set_ext_key_usage_ext("serverAuth", /*critical=*/true);
+    });
+    REQUIRE(req);
+
+    SECTION("From Request No Copy")
+    {
+        auto cert = x509::v2::builder::selfsign(
+            req, key, unittest::default_digest(), [](x509::v2::builder::context& ctx, x509_req::roref req) -> void { });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+
+        REQUIRE_THAT(cert_text, !ContainsSubstring("X509v3 Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, !ContainsSubstring("Digital Signature, Key Encipherment, Key Agreement\n"));
+
+        REQUIRE_THAT(cert_text, !ContainsSubstring("X509v3 Extended Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, !ContainsSubstring("TLS Web Server Authentication\n"));
+    }
+
+    SECTION("From Request Copy")
+    {
+        auto cert = x509::v2::builder::selfsign(
+            req, key, unittest::default_digest(), [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
+                x509::v2::builder::copy_extensions::all(ctx, req);
+            });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("Digital Signature, Key Encipherment, Key Agreement\n"));
+
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Extended Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("TLS Web Server Authentication\n"));
+    }
 }
