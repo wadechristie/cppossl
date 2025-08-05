@@ -82,7 +82,6 @@ SET(CPPOSSL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/general_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder_v2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl.cpp
@@ -96,6 +95,7 @@ SET(CPPOSSL_SRC
 )
 
 SET(CPPOSSL_INC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/builder/x509_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_bit_string.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_time.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/bio.hpp
@@ -106,7 +106,6 @@ SET(CPPOSSL_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/pem.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/raii.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/stack.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_crl_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_crl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/x509_extension.hpp

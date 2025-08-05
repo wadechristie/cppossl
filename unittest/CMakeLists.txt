@@ -15,7 +15,6 @@ SET(CPPOSSL_UNITTEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/test_evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_openssl_error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stack.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_builder_v2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_crl.cpp
