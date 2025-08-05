@@ -16,17 +16,17 @@ TEST_CASE("asn1::string", "[asn1_string]")
 {
     SECTION("ASCII String")
     {
-        REQUIRE_NOTHROW(make<asn1::IA5STRING>("Ascii String"));
+        REQUIRE_NOTHROW(asn1::string::make<asn1::IA5STRING>("Ascii String"));
     }
 
     SECTION("UTF8 String")
     {
-        REQUIRE_NOTHROW(make<asn1::UTF8STRING>("UFT8 String €"));
+        REQUIRE_NOTHROW(asn1::string::make<asn1::UTF8STRING>("UFT8 String €"));
     }
 
     SECTION("Invalid String")
     {
         auto bitstr = make<asn1::BIT_STRING>();
-        REQUIRE_THROWS_AS(set(bitstr, "string value"), std::runtime_error);
+        REQUIRE_THROWS_AS(asn1::string::set(bitstr, "string value"), std::runtime_error);
     }
 }

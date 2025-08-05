@@ -11,11 +11,12 @@ SET(CPPOSSL_UNITTEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_bit_string.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_string.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_asn1_time.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_bignum.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_bio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_openssl_error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stack.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_builder_v2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_crl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_x509_name.cpp

@@ -6,6 +6,7 @@
 #include <openssl/pem.h>
 
 #include "cppossl/asn1_time.hpp"
+#include "cppossl/bignum.hpp"
 #include "cppossl/bio.hpp"
 #include "cppossl/error.hpp"
 #include "cppossl/raii.hpp"
@@ -78,17 +79,14 @@ namespace x509 {
     {
         owned<::BIGNUM> bn { ASN1_INTEGER_to_BN(X509_get_serialNumber(const_cast<::X509*>(x509.get())), nullptr) };
         if (bn == nullptr)
-            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number as OpenSSL BIGNUM."); // LCOV_EXCL_LINE
+            CPPOSSL_THROW_ERRNO(ENOMEM, "Failed to get X.509 serial number as BIGNUM."); // LCOV_EXCL_LINE
         return bn;
     } // LCOV_EXCL_LINE
 
     std::string get_serial_number_hex(roref x509)
     {
         auto const bn = get_serial_number_bn(x509);
-        owned<char> const hex { BN_bn2hex(bn.get()) };
-        if (hex == nullptr)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to convert OpenSSL BIGNUM object to hex."); // LCOV_EXCL_LINE
-        return std::string { hex.get() };
+        return bignum::to_hex_string(bn);
     }
 
     void print_text(bio const& bio, roref x509)

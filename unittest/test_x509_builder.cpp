@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <cppossl/asn1_integer.hpp>
 #include <cppossl/builder/x509_builder.hpp>
 #include <cppossl/x509_req_builder.hpp>
 
@@ -35,9 +36,9 @@ TEST_CASE("v2 X.509 Builder - Selfsign", "[x509][builder]")
     auto const key = unittest::rsa_key_one.load();
     auto const subject = name("Self-Signed");
 
-    auto cert = x509::v2::builder::selfsign(key,
-        unittest::default_digest(),
-        [&subject](x509::v2::builder::context& ctx) { x509::v2::builder::set_subject(ctx, subject); });
+    auto cert = x509::builder::selfsign(key, unittest::default_digest(), [&subject](x509::builder::context& ctx) {
+        x509::builder::set_subject(ctx, subject);
+    });
     REQUIRE(cert);
 
     INFO(x509::print_text(cert));
@@ -53,13 +54,13 @@ TEST_CASE("v2 X.509 Builder - Sign", "[x509][builder]")
     auto const signing_key = unittest::rsa_key_one.load();
     auto const child_key = unittest::rsa_key_two.load();
 
-    auto signing_cert = x509::v2::builder::selfsign(signing_key,
+    auto signing_cert = x509::builder::selfsign(signing_key,
         unittest::default_digest(),
-        [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+        [](x509::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
     REQUIRE(signing_cert);
 
-    auto child_cert = x509::v2::builder::sign(
-        signing_cert, signing_key, unittest::default_digest(), [&child_key](x509::v2::builder::context& ctx) {
+    auto child_cert = x509::builder::sign(
+        signing_cert, signing_key, unittest::default_digest(), [&child_key](x509::builder::context& ctx) {
             set_subject(ctx, name("Child Cert"));
             set_public_key(ctx, child_key);
         });
@@ -73,18 +74,16 @@ TEST_CASE("v2 X.509 Builder - serialNumber", "[x509][builder]")
     uint64_t constexpr testserial = 4321;
     auto const key = unittest::rsa_key_one.load();
 
-    auto cert
-        = x509::v2::builder::selfsign(key, unittest::default_digest(), [&testserial](x509::v2::builder::context& ctx) {
-              set_subject(ctx, name("serialNumber"));
-              set_serialno(ctx, testserial);
-          });
+    auto cert = x509::builder::selfsign(key, unittest::default_digest(), [&testserial](x509::builder::context& ctx) {
+        set_subject(ctx, name("serialNumber"));
+        set_serialno(ctx, testserial);
+    });
     REQUIRE(cert);
     INFO(x509::print_text(cert));
 
+    auto expected = asn1::integer::make(testserial);
     auto serial = x509::get_serial_number(cert);
-    auto tmp = make<asn1::INTEGER>();
-    ::ASN1_INTEGER_set_uint64(tmp.get(), testserial);
-    REQUIRE(::ASN1_INTEGER_cmp(serial.get(), tmp.get()) == 0);
+    REQUIRE(::ASN1_INTEGER_cmp(expected.get(), serial.get()) == 0);
 }
 
 TEST_CASE("v2 X.509 Builder - notBefore/notAfter", "[x509][builder]")
@@ -94,12 +93,12 @@ TEST_CASE("v2 X.509 Builder - notBefore/notAfter", "[x509][builder]")
     time_t const lastweek = now - (std::chrono::hours(24) * 7).count();
     time_t const nextweek = now + (std::chrono::hours(24) * 7).count();
 
-    auto cert = x509::v2::builder::selfsign(
-        key, unittest::default_digest(), [lastweek, nextweek](x509::v2::builder::context& ctx) {
-            set_subject(ctx, name("notBefore/notAfter"));
-            set_not_before(ctx, asn1::time::from_unix(lastweek));
-            set_not_after(ctx, asn1::time::from_unix(nextweek));
-        });
+    auto cert
+        = x509::builder::selfsign(key, unittest::default_digest(), [lastweek, nextweek](x509::builder::context& ctx) {
+              set_subject(ctx, name("notBefore/notAfter"));
+              set_not_before(ctx, asn1::time::from_unix(lastweek));
+              set_not_after(ctx, asn1::time::from_unix(nextweek));
+          });
     REQUIRE(cert);
     REQUIRE(x509::get_not_before(cert) == lastweek);
     REQUIRE(x509::get_not_after(cert) == nextweek);
@@ -111,7 +110,7 @@ TEST_CASE("v2 X.509 Builder - Basic Constraints", "[x509][builder]")
 
     SECTION("Basic Constraints - CA:TRUE")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Basic Constraints"));
             set_basic_constraints(ctx, true);
         });
@@ -124,7 +123,7 @@ TEST_CASE("v2 X.509 Builder - Basic Constraints", "[x509][builder]")
 
     SECTION("Basic Constraints - CA:TRUE, pathlen=1")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Basic Constraints"));
             set_basic_constraints(ctx, /*ca=*/true, /*pathlen=*/1);
         });
@@ -137,7 +136,7 @@ TEST_CASE("v2 X.509 Builder - Basic Constraints", "[x509][builder]")
 
     SECTION("Basic Constraints - CA:FALSE")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Basic Constraints"));
             set_basic_constraints(ctx, /*ca=*/false);
         });
@@ -155,7 +154,7 @@ TEST_CASE("v2 X.509 Builder - Key Usage", "[x509][builder]")
 
     SECTION("Critical")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Key Usage"));
             set_key_usage(ctx, "critical, digitalSignature, keyAgreement");
         });
@@ -168,7 +167,7 @@ TEST_CASE("v2 X.509 Builder - Key Usage", "[x509][builder]")
 
     SECTION("Non-Critical")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Key Usage"));
             set_key_usage(ctx, "keyEncipherment, dataEncipherment");
         });
@@ -181,9 +180,9 @@ TEST_CASE("v2 X.509 Builder - Key Usage", "[x509][builder]")
 
     SECTION("Invalid Usage String")
     {
-        REQUIRE_THROWS_AS(x509::v2::builder::selfsign(key,
+        REQUIRE_THROWS_AS(x509::builder::selfsign(key,
                               unittest::default_digest(),
-                              [](x509::v2::builder::context& ctx) {
+                              [](x509::builder::context& ctx) {
                                   set_subject(ctx, name("Key Usage"));
                                   set_key_usage(ctx, "keyEncipherment, dataEncipherment, invalidUsage");
                               }),
@@ -197,7 +196,7 @@ TEST_CASE("X.509 Builder v2 - Extended Key Usage Identifier", "[x509][builder]")
 
     SECTION("Critical")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Extended Key Usage"));
             set_ext_key_usage(ctx, "critical,serverAuth");
         });
@@ -210,7 +209,7 @@ TEST_CASE("X.509 Builder v2 - Extended Key Usage Identifier", "[x509][builder]")
 
     SECTION("Non-Critical")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Extended Key Usage"));
             set_ext_key_usage(ctx, "codeSigning, timeStamping");
         });
@@ -223,9 +222,9 @@ TEST_CASE("X.509 Builder v2 - Extended Key Usage Identifier", "[x509][builder]")
 
     SECTION("Invalid Usage String")
     {
-        REQUIRE_THROWS_AS(x509::v2::builder::selfsign(key,
+        REQUIRE_THROWS_AS(x509::builder::selfsign(key,
                               unittest::default_digest(),
-                              [](x509::v2::builder::context& ctx) {
+                              [](x509::builder::context& ctx) {
                                   set_subject(ctx, name("Extended Key Usage"));
                                   set_ext_key_usage(ctx, "serverAuth, invalidUsage");
                               }),
@@ -239,12 +238,11 @@ TEST_CASE("v2 X.509 Builder - Subject Key Identifier", "[x509][builder]")
 
     SECTION("Subject Key Identifier")
     {
-        auto cert
-            = x509::v2::builder::selfsign(key, unittest::default_digest(), [&key](x509::v2::builder::context& ctx) {
-                  set_subject(ctx, name("Subject Key Identifier"));
-                  set_public_key(ctx, key);
-                  set_subject_key_id(ctx);
-              });
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [&key](x509::builder::context& ctx) {
+            set_subject(ctx, name("Subject Key Identifier"));
+            set_public_key(ctx, key);
+            set_subject_key_id(ctx);
+        });
         REQUIRE(cert);
 
         auto const cert_text = x509::print_text(cert);
@@ -253,9 +251,9 @@ TEST_CASE("v2 X.509 Builder - Subject Key Identifier", "[x509][builder]")
 
     SECTION("Public Key Not Set")
     {
-        REQUIRE_THROWS_AS((void)x509::v2::builder::selfsign(key,
+        REQUIRE_THROWS_AS((void)x509::builder::selfsign(key,
                               unittest::default_digest(),
-                              [](x509::v2::builder::context& ctx) {
+                              [](x509::builder::context& ctx) {
                                   set_subject(ctx, name("Subject Key Identifier"));
                                   set_subject_key_id(ctx);
                               }),
@@ -268,19 +266,19 @@ TEST_CASE("X.509 Builder v2 - Authority Key Identifier", "[x509][builder]")
     auto const signing_key = unittest::rsa_key_one.load();
     auto const child_key = unittest::rsa_key_two.load();
 
-    auto signing_cert = x509::v2::builder::selfsign(
-        signing_key, unittest::default_digest(), [&signing_key](x509::v2::builder::context& ctx) {
-            set_subject(ctx, name("Signing Cert"));
-            set_public_key(ctx, signing_key);
-            set_basic_constraints(ctx, /*ca=*/true, /*pathlen=*/0);
-            set_subject_key_id(ctx);
-        });
+    auto signing_cert
+        = x509::builder::selfsign(signing_key, unittest::default_digest(), [&signing_key](x509::builder::context& ctx) {
+              set_subject(ctx, name("Signing Cert"));
+              set_public_key(ctx, signing_key);
+              set_basic_constraints(ctx, /*ca=*/true, /*pathlen=*/0);
+              set_subject_key_id(ctx);
+          });
     REQUIRE(signing_cert);
 
-    auto child_cert = x509::v2::builder::sign(signing_cert,
+    auto child_cert = x509::builder::sign(signing_cert,
         signing_key,
         unittest::default_digest(),
-        [&signing_cert, &child_key](x509::v2::builder::context& ctx) {
+        [&signing_cert, &child_key](x509::builder::context& ctx) {
             set_subject(ctx, name("Child Cert"));
             set_public_key(ctx, child_key);
             set_authority_key_id(ctx, signing_cert);
@@ -298,7 +296,7 @@ TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
 
     SECTION("DNS Name")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Subject Alt Name"));
             set_subject_alt_names(ctx,
                 {
@@ -314,7 +312,7 @@ TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
 
     SECTION("IP Address Name")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Subject Alt Name"));
             set_subject_alt_names(ctx,
                 {
@@ -336,7 +334,7 @@ TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
 
     SECTION("Email Address Name")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Subject Alt Name"));
             set_subject_alt_names(ctx,
                 {
@@ -350,9 +348,25 @@ TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
         REQUIRE_THAT(cert_text, ContainsSubstring("email:email@example.com"));
     }
 
+    SECTION("URI")
+    {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::uri("http://example.com/file.html"),
+                });
+        });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Subject Alternative Name: \n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("URI:http://example.com/file.html"));
+    }
+
     SECTION("UPN")
     {
-        auto cert = x509::v2::builder::selfsign(key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        auto cert = x509::builder::selfsign(key, unittest::default_digest(), [](x509::builder::context& ctx) {
             set_subject(ctx, name("Subject Alt Name"));
             set_subject_alt_names(ctx,
                 {
@@ -379,8 +393,8 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
 
     SECTION("Extensions - No Copy")
     {
-        auto cert = x509::v2::builder::selfsign(
-            req, key, unittest::default_digest(), [](x509::v2::builder::context& ctx, x509_req::roref req) -> void { });
+        auto cert = x509::builder::selfsign(
+            req, key, unittest::default_digest(), [](x509::builder::context& ctx, x509_req::roref req) -> void { });
         REQUIRE(cert);
 
         auto const cert_text = x509::print_text(cert);
@@ -395,17 +409,17 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
     SECTION("Extensions - Copy All")
     {
         auto const signing_key = unittest::rsa_key_one.load();
-        auto signing_cert = x509::v2::builder::selfsign(signing_key,
+        auto signing_cert = x509::builder::selfsign(signing_key,
             unittest::default_digest(),
-            [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+            [](x509::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
         REQUIRE(signing_cert);
 
-        auto cert = x509::v2::builder::sign(req,
+        auto cert = x509::builder::sign(req,
             signing_cert,
             signing_key,
             unittest::default_digest(),
-            [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
-                x509::v2::builder::copy_extensions::all(ctx, req);
+            [](x509::builder::context& ctx, x509_req::roref& req) -> void {
+                x509::builder::copy_extensions::all(ctx, req);
             });
         REQUIRE(cert);
 
@@ -421,17 +435,17 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
     SECTION("Extensions - Copy Some")
     {
         auto const signing_key = unittest::rsa_key_one.load();
-        auto signing_cert = x509::v2::builder::selfsign(signing_key,
+        auto signing_cert = x509::builder::selfsign(signing_key,
             unittest::default_digest(),
-            [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+            [](x509::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
         REQUIRE(signing_cert);
 
-        auto cert = x509::v2::builder::sign(req,
+        auto cert = x509::builder::sign(req,
             signing_cert,
             signing_key,
             unittest::default_digest(),
-            [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
-                x509::v2::builder::copy_extensions::some(ctx,
+            [](x509::builder::context& ctx, x509_req::roref& req) -> void {
+                x509::builder::copy_extensions::some(ctx,
                     req,
                     {
                         object::wellknown_nid::key_usage,

@@ -36,8 +36,8 @@ struct x509_crl_builder_test
 
 owned<::EVP_PKEY> const x509_crl_builder_test::signing_key { unittest::rsa_key_one.load() };
 
-owned<::X509> const x509_crl_builder_test::signing_cert { x509::v2::builder::selfsign(
-    signing_key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+owned<::X509> const x509_crl_builder_test::signing_cert { x509::builder::selfsign(
+    signing_key, unittest::default_digest(), [](x509::builder::context& ctx) {
         set_subject(ctx, name("Signing Certificate"));
         set_public_key(ctx, signing_key);
         set_not_after(ctx, asn1::time::offset(std::chrono::hours(24) * 30));
@@ -65,8 +65,8 @@ TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Add Certificates", 
     {
         std::stringstream ss;
         ss << "Child Cert " << i;
-        certs.push_back(x509::v2::builder::sign(
-            signing_cert, signing_key, unittest::default_digest(), [&childkey, &ss](x509::v2::builder::context& ctx) {
+        certs.push_back(x509::builder::sign(
+            signing_cert, signing_key, unittest::default_digest(), [&childkey, &ss](x509::builder::context& ctx) {
                 set_subject(ctx, name(ss.str()));
                 set_public_key(ctx, childkey);
                 set_authority_key_id(ctx, signing_cert);

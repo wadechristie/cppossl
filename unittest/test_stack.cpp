@@ -24,7 +24,7 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
         constexpr size_t count = 10;
         for (size_t i = 1; i <= count; ++i)
         {
-            REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
+            REQUIRE_NOTHROW(sk.push(asn1::string::make<asn1::UTF8STRING>("String Value")));
             REQUIRE(sk.size() == i);
         }
 
@@ -37,7 +37,7 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
         constexpr size_t count = 10;
         for (size_t i = 1; i <= count; ++i)
         {
-            REQUIRE_NOTHROW(sk.unshift(ossl::make<asn1::UTF8STRING>("String Value")));
+            REQUIRE_NOTHROW(sk.unshift(asn1::string::make<asn1::UTF8STRING>("String Value")));
             REQUIRE(sk.size() == i);
         }
 
@@ -47,7 +47,7 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
 
     SECTION("Pop")
     {
-        REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
+        REQUIRE_NOTHROW(sk.push(asn1::string::make<asn1::UTF8STRING>("String Value")));
         REQUIRE_FALSE(sk.empty());
 
         ossl::owned<::ASN1_STRING> s;
@@ -58,7 +58,7 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
 
     SECTION("Shift")
     {
-        REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
+        REQUIRE_NOTHROW(sk.push(asn1::string::make<asn1::UTF8STRING>("String Value")));
         REQUIRE_FALSE(sk.empty());
 
         ossl::owned<::ASN1_STRING> s;
@@ -72,7 +72,7 @@ TEST_CASE("OpenSSL Stack Wrapper", "[stack]")
         constexpr size_t count = 10;
         for (size_t i = 1; i <= count; ++i)
         {
-            REQUIRE_NOTHROW(sk.push(ossl::make<asn1::UTF8STRING>("String Value")));
+            REQUIRE_NOTHROW(sk.push(asn1::string::make<asn1::UTF8STRING>("String Value")));
             REQUIRE(sk.size() == i);
         }
 

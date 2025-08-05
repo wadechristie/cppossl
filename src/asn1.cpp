@@ -3,11 +3,67 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
+#include "cppossl/asn1_bit_string.hpp"
+#include "cppossl/asn1_integer.hpp"
 #include "cppossl/asn1_time.hpp"
 #include "cppossl/error.hpp"
 
 namespace ossl {
 namespace asn1 {
+    namespace bit_string {
+
+        void set_bit(rwref bitstr, uint8_t index, bool value)
+        {
+            if (ASN1_BIT_STRING_set_bit(bitstr.get(), static_cast<int>(index), value ? 1 : 0) != 1)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failed to set bit in ASN1_BIT_STRING.");
+        }
+
+        bool is_set(roref bitstr, uint8_t index)
+        {
+            return ASN1_BIT_STRING_get_bit(bitstr.get(), static_cast<int>(index));
+        }
+
+    } // namespace bit_string
+
+    namespace integer {
+
+        owned<::ASN1_INTEGER> make(uint64_t value)
+        {
+            auto i = ossl::make<asn1::INTEGER>();
+            if (ASN1_INTEGER_set_uint64(i.get(), value) == 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failed to set ASN1_INTEGER object with unsigned integer value."); // LCOV_EXCL_LINE
+            return i;
+        } // LCOV_EXCL_LINE
+
+        owned<::ASN1_INTEGER> make(ossl::raii::roref<::BIGNUM> value)
+        {
+            auto i = ossl::make<asn1::INTEGER>();
+            if (BN_to_ASN1_INTEGER(value.get(), i.get()) == nullptr)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                    "Failed to convert BIGNUM object to ASN1_INTEGER object."); // LCOV_EXCL_LINE
+            return i;
+        } // LCOV_EXCL_LINE
+
+    } // namespace integer
+
+    namespace string {
+
+        void set(raii::rwref<::ASN1_STRING> str, std::string_view value)
+        {
+            if (ASN1_STRING_type(str.get()) != asn1::IA5STRING && ASN1_STRING_type(str.get()) != asn1::UTF8STRING)
+                throw std::runtime_error("Operation not supported on ASN1_STRING type.");
+
+            if (value.size() > std::numeric_limits<int>::max())
+                throw std::runtime_error("Input string too large for ASN1_STRING construction."); // LCOV_EXCL_LINE
+
+            if (!ASN1_STRING_set(str.get(), value.data(), static_cast<int>(value.size())))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set ASN1_STRING value."); // LCOV_EXCL_LINE
+        }
+
+    } // namespace string
+
     namespace time {
 
         int cmp(roref left, roref right)
@@ -71,5 +127,6 @@ namespace asn1 {
         } // LCOV_EXCL_LINE
 
     } // namespace time
+
 } // namespace asn1
 } // namespace ossl

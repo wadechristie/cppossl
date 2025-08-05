@@ -74,15 +74,15 @@ endif()
 ##
 
 SET(CPPOSSL_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/asn1_bit_string.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/asn1_time.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/asn1.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bignum.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/error.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/evp_pkey.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/general_name.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pem.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder_v2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl_builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_crl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/x509_extension.cpp
@@ -97,7 +97,10 @@ SET(CPPOSSL_SRC
 SET(CPPOSSL_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/builder/x509_builder.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_bit_string.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_integer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_string.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/asn1_time.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/bignum.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/bio.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/error.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cppossl/evp_pkey.hpp

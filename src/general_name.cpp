@@ -17,7 +17,7 @@ namespace general_name {
         static owned<::GENERAL_NAME> make_ia5(int type, std::string_view const& value)
         {
             owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
-            GENERAL_NAME_set0_value(name.get(), type, make<asn1::IA5STRING>(value).release());
+            GENERAL_NAME_set0_value(name.get(), type, asn1::string::make<asn1::IA5STRING>(value).release());
             return name;
         } // LCOV_EXCL_LINE
 
@@ -83,7 +83,7 @@ namespace general_name {
         owned<::GENERAL_NAME> name = make<::GENERAL_NAME>();
 
         owned<::ASN1_TYPE> value = make<::ASN1_TYPE>();
-        ASN1_TYPE_set(value.get(), V_ASN1_UTF8STRING, make<asn1::UTF8STRING>(upn).release());
+        ASN1_TYPE_set(value.get(), V_ASN1_UTF8STRING, asn1::string::make<asn1::UTF8STRING>(upn).release());
 
         if (GENERAL_NAME_set0_othername(name.get(), OBJ_nid2obj(NID_ms_upn), value.get()) != 1)
             CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE

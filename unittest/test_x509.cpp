@@ -80,8 +80,8 @@ TEST_CASE("X.509 - equal()", "[x509]")
 {
     auto const key = unittest::rsa_key_one.load();
     auto const subject = x509_name::build([](auto& name) { x509_name::set_common_name(name, "Equality Test"); });
-    owned<::X509> cert = x509::v2::builder::selfsign(
-        key, unittest::default_digest(), [&subject](x509::v2::builder::context& ctx) { set_subject(ctx, subject); });
+    owned<::X509> cert = x509::builder::selfsign(
+        key, unittest::default_digest(), [&subject](x509::builder::context& ctx) { set_subject(ctx, subject); });
     REQUIRE(cert);
 
     std::string cert_as_pem;
