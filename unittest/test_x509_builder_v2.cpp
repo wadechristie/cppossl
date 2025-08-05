@@ -48,6 +48,63 @@ TEST_CASE("v2 X.509 Builder - Selfsign", "[x509][builder]")
     REQUIRE(x509::check_key(cert, key));
 }
 
+TEST_CASE("v2 X.509 Builder - Sign", "[x509][builder]")
+{
+    auto const signing_key = unittest::rsa_key_one.load();
+    auto const child_key = unittest::rsa_key_two.load();
+
+    auto signing_cert = x509::v2::builder::selfsign(signing_key,
+        unittest::default_digest(),
+        [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+    REQUIRE(signing_cert);
+
+    auto child_cert = x509::v2::builder::sign(
+        signing_cert, signing_key, unittest::default_digest(), [&child_key](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("Child Cert"));
+            set_public_key(ctx, child_key);
+        });
+    REQUIRE(child_cert);
+    REQUIRE(x509_name::equal(x509::get_subject(signing_cert), x509::get_issuer(child_cert)));
+    REQUIRE(x509::check_key(child_cert, child_key));
+}
+
+TEST_CASE("v2 X.509 Builder - serialNumber", "[x509][builder]")
+{
+    uint64_t constexpr testserial = 4321;
+    auto const key = unittest::rsa_key_one.load();
+
+    auto cert
+        = x509::v2::builder::selfsign(key, unittest::default_digest(), [&testserial](x509::v2::builder::context& ctx) {
+              set_subject(ctx, name("serialNumber"));
+              set_serialno(ctx, testserial);
+          });
+    REQUIRE(cert);
+    INFO(x509::print_text(cert));
+
+    auto serial = x509::get_serial_number(cert);
+    auto tmp = make<asn1::INTEGER>();
+    ::ASN1_INTEGER_set_uint64(tmp.get(), testserial);
+    REQUIRE(::ASN1_INTEGER_cmp(serial.get(), tmp.get()) == 0);
+}
+
+TEST_CASE("v2 X.509 Builder - notBefore/notAfter", "[x509][builder]")
+{
+    auto const key = unittest::rsa_key_one.load();
+    time_t const now = time(nullptr);
+    time_t const lastweek = now - (std::chrono::hours(24) * 7).count();
+    time_t const nextweek = now + (std::chrono::hours(24) * 7).count();
+
+    auto cert = x509::v2::builder::selfsign(
+        key, unittest::default_digest(), [lastweek, nextweek](x509::v2::builder::context& ctx) {
+            set_subject(ctx, name("notBefore/notAfter"));
+            set_not_before(ctx, asn1::time::from_unix(lastweek));
+            set_not_after(ctx, asn1::time::from_unix(nextweek));
+        });
+    REQUIRE(cert);
+    REQUIRE(x509::get_not_before(cert) == lastweek);
+    REQUIRE(x509::get_not_after(cert) == nextweek);
+}
+
 TEST_CASE("v2 X.509 Builder - Basic Constraints", "[x509][builder]")
 {
     auto const key = unittest::rsa_key_one.load();
@@ -313,10 +370,10 @@ TEST_CASE("X.509 Builder v2 - Subject Alternative Names", "[x509][builder]")
 TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
 {
     auto const key = unittest::rsa_key_one.load();
-    auto const req = x509_req::sign(key, unittest::default_digest(), [](x509_req::builder& builder) {
-        builder.set_subject(name("Cert Request"))
-            .set_key_usage_ext("digitalSignature, keyEncipherment, keyAgreement", /*critical=*/true)
-            .set_ext_key_usage_ext("serverAuth", /*critical=*/true);
+    auto const req = x509_req::builder::sign(key, unittest::default_digest(), [](x509_req::builder::context& ctx) {
+        set_subject(ctx, name("Cert Request"));
+        set_key_usage(ctx, "digitalSignature, keyEncipherment, keyAgreement", /*critical=*/true);
+        set_ext_key_usage(ctx, "serverAuth", /*critical=*/true);
     });
     REQUIRE(req);
 
@@ -335,10 +392,19 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
         REQUIRE_THAT(cert_text, !ContainsSubstring("TLS Web Server Authentication\n"));
     }
 
-    SECTION("From Request Copy")
+    SECTION("From Request Copy All")
     {
-        auto cert = x509::v2::builder::selfsign(
-            req, key, unittest::default_digest(), [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
+        auto const signing_key = unittest::rsa_key_one.load();
+        auto signing_cert = x509::v2::builder::selfsign(signing_key,
+            unittest::default_digest(),
+            [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+        REQUIRE(signing_cert);
+
+        auto cert = x509::v2::builder::sign(req,
+            signing_cert,
+            signing_key,
+            unittest::default_digest(),
+            [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
                 x509::v2::builder::copy_extensions::all(ctx, req);
             });
         REQUIRE(cert);
@@ -350,5 +416,35 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
 
         REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Extended Key Usage: critical\n"));
         REQUIRE_THAT(cert_text, ContainsSubstring("TLS Web Server Authentication\n"));
+    }
+
+    SECTION("From Request Copy Some")
+    {
+        auto const signing_key = unittest::rsa_key_one.load();
+        auto signing_cert = x509::v2::builder::selfsign(signing_key,
+            unittest::default_digest(),
+            [](x509::v2::builder::context& ctx) { set_subject(ctx, name("Signing Cert")); });
+        REQUIRE(signing_cert);
+
+        auto cert = x509::v2::builder::sign(req,
+            signing_cert,
+            signing_key,
+            unittest::default_digest(),
+            [](x509::v2::builder::context& ctx, x509_req::roref& req) -> void {
+                x509::v2::builder::copy_extensions::some(ctx,
+                    req,
+                    {
+                        object::wellknown_nid::key_usage,
+                    });
+            });
+        REQUIRE(cert);
+
+        auto const cert_text = x509::print_text(cert);
+
+        REQUIRE_THAT(cert_text, ContainsSubstring("X509v3 Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, ContainsSubstring("Digital Signature, Key Encipherment, Key Agreement\n"));
+
+        REQUIRE_THAT(cert_text, !ContainsSubstring("X509v3 Extended Key Usage: critical\n"));
+        REQUIRE_THAT(cert_text, !ContainsSubstring("TLS Web Server Authentication\n"));
     }
 }

@@ -6,10 +6,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <cppossl/builder/x509_builder.hpp>
 #include <cppossl/error.hpp>
 #include <cppossl/pem.hpp>
 #include <cppossl/x509.hpp>
-#include <cppossl/x509_builder.hpp>
 #include <cppossl/x509_name.hpp>
 
 #include "common.hpp"
@@ -80,8 +80,8 @@ TEST_CASE("X.509 - equal()", "[x509]")
 {
     auto const key = unittest::rsa_key_one.load();
     auto const subject = x509_name::build([](auto& name) { x509_name::set_common_name(name, "Equality Test"); });
-    owned<::X509> cert = x509::selfsign(
-        key, unittest::default_digest(), [&subject](x509::builder& builder) { builder.set_subject(subject); });
+    owned<::X509> cert = x509::v2::builder::selfsign(
+        key, unittest::default_digest(), [&subject](x509::v2::builder::context& ctx) { set_subject(ctx, subject); });
     REQUIRE(cert);
 
     std::string cert_as_pem;

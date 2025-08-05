@@ -8,7 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include <cppossl/x509_builder.hpp>
+#include <cppossl/builder/x509_builder.hpp>
 #include <cppossl/x509_crl_builder.hpp>
 
 #include "common.hpp"
@@ -36,20 +36,22 @@ struct x509_crl_builder_test
 
 owned<::EVP_PKEY> const x509_crl_builder_test::signing_key { unittest::rsa_key_one.load() };
 
-owned<::X509> const x509_crl_builder_test::signing_cert { x509::selfsign(
-    signing_key, unittest::default_digest(), [](x509::builder& builder) {
-        builder.set_subject(name("Signing Certificate"))
-            .set_public_key(signing_key)
-            .set_not_after(asn1::time::offset(std::chrono::hours(24) * 30))
-            .set_subject_key_id_ext()
-            .set_key_usage_ext("nonRepudiation, keyCertSign, cRLSign");
+owned<::X509> const x509_crl_builder_test::signing_cert { x509::v2::builder::selfsign(
+    signing_key, unittest::default_digest(), [](x509::v2::builder::context& ctx) {
+        set_subject(ctx, name("Signing Certificate"));
+        set_public_key(ctx, signing_key);
+        set_not_after(ctx, asn1::time::offset(std::chrono::hours(24) * 30));
+        set_subject_key_id(ctx);
+        set_key_usage(ctx, "nonRepudiation, keyCertSign, cRLSign");
     }) };
 
 TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Sign", "[x509_crl][builder]")
 {
-    auto crl = x509_crl::sign(signing_cert, signing_key, unittest::default_digest(), [](x509_crl::builder& builder) {
-        builder.set_lastupdate(asn1::time::now()).set_nextupdate(asn1::time::offset(std::chrono::hours(24) * 7));
-    });
+    auto crl = x509_crl::builder::sign(
+        signing_cert, signing_key, unittest::default_digest(), [](x509_crl::builder::context& ctx) {
+            set_lastupdate(ctx, asn1::time::now());
+            set_nextupdate(ctx, asn1::time::offset(std::chrono::hours(24) * 7));
+        });
     REQUIRE(crl);
     REQUIRE_THAT(x509_crl::print_text(crl),
         ContainsSubstring(x509_name::print_text(x509::get_subject(signing_cert), XN_FLAG_COMPAT)));
@@ -57,25 +59,32 @@ TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Sign", "[x509_crl][
 
 TEST_CASE_METHOD(x509_crl_builder_test, "X.509 CRL Builder - Add Certificates", "[x509_crl][builder]")
 {
-    x509_crl::builder builder;
-    builder.set_lastupdate(asn1::time::now());
-    builder.set_nextupdate(asn1::time::offset(std::chrono::hours(24) * 7));
-
     auto const childkey = unittest::rsa_key_two.load();
     std::vector<owned<::X509>> certs;
     for (uint i = 1; i <= 28; ++i)
     {
         std::stringstream ss;
         ss << "Child Cert " << i;
-        certs.push_back(
-            x509::sign(signing_cert, signing_key, unittest::default_digest(), [&childkey, &ss](x509::builder& builder) {
-                builder.set_subject(name(ss.str())).set_public_key(childkey).set_authority_key_id_ext(signing_cert);
+        certs.push_back(x509::v2::builder::sign(
+            signing_cert, signing_key, unittest::default_digest(), [&childkey, &ss](x509::v2::builder::context& ctx) {
+                set_subject(ctx, name(ss.str()));
+                set_public_key(ctx, childkey);
+                set_authority_key_id(ctx, signing_cert);
             }));
-        builder.add(
-            *certs.crbegin(), asn1::time::offset(std::chrono::seconds(7 * i)), OCSP_REVOKED_STATUS_KEYCOMPROMISE);
     }
 
-    auto const crl = builder.sign(signing_cert, signing_key, unittest::default_digest());
+    auto crl = x509_crl::builder::sign(
+        signing_cert, signing_key, unittest::default_digest(), [&certs](x509_crl::builder::context& ctx) {
+            set_lastupdate(ctx, asn1::time::now());
+            set_nextupdate(ctx, asn1::time::offset(std::chrono::hours(24) * 7));
+
+            int i = 0;
+            for (auto const& cert : certs)
+            {
+                add(ctx, cert, asn1::time::offset(std::chrono::seconds(7 * ++i)), OCSP_REVOKED_STATUS_KEYCOMPROMISE);
+            }
+        });
+
     REQUIRE(crl);
     REQUIRE_THAT(x509_crl::print_text(crl),
         ContainsSubstring(x509_name::print_text(x509::get_subject(signing_cert), XN_FLAG_COMPAT)));

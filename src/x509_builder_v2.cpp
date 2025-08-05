@@ -59,6 +59,13 @@ namespace x509 {
                             remove_ext_by_nid(x509, obj_nid);
                         }
 
+                        if constexpr (!CopyAll)
+                        {
+                            auto search = std::find(begin, end, obj_nid);
+                            if (search == end)
+                                continue;
+                        }
+
                         add_extension(x509, ext);
                     }
                 }
@@ -154,9 +161,39 @@ namespace x509 {
                 ossl::x509::roref issuer_cert,
                 ossl::evp_pkey::roref issuer_key,
                 EVP_MD const* digest,
-                std::function<void(context&)> func)
+                std::function<void(context&, ossl::x509_req::roref&)> func)
             {
-                abort();
+                CPPOSSL_ASSERT(digest != nullptr);
+
+                auto cert = make<::X509>();
+                context ctx(cert);
+
+                // default to a random serial number
+                set_random_serialno(ctx);
+
+                // default notBefore & notAfter to now
+                auto const now = asn1::time::now();
+                set_not_before(ctx, now);
+                set_not_after(ctx, now);
+
+                // copy subject from the request
+                set_subject(ctx, X509_REQ_get_subject_name(req.get()));
+
+                // copy public key from the request
+                ossl::owned<EVP_PKEY> pubkey(X509_REQ_get_pubkey(const_cast<::X509_REQ*>(req.get())));
+                if (pubkey == nullptr)
+                    CPPOSSL_THROW_ERRNO(EINVAL, "X.509 certificate request is missing a public key."); // LCOV_EXCL_LINE
+                set_public_key(ctx, pubkey);
+
+                // execute caller callback
+                func(ctx, req);
+
+                _::set_issuer(ctx, X509_get_subject_name(issuer_cert.get()));
+
+                if (X509_sign(cert.get(), const_cast<::EVP_PKEY*>(issuer_key.get()), digest) <= 0)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 certificate."); // LCOV_EXCL_LINE
+
+                return cert;
             }
 
             ossl::owned<::X509> selfsign(ossl::x509_req::roref req,
@@ -230,11 +267,24 @@ namespace x509 {
                     ctx.get(), req, nids.begin(), nids.end(), /*overwrite=*/false);
             }
 
-            void set_serialno(context& ctx, ossl::raii::roref<::BIGNUM> serial)
+            void set_serialno(context& ctx, uint64_t serial)
             {
-                if (BN_to_ASN1_INTEGER(serial.get(), X509_get_serialNumber(ctx.get())) == 0)
+                auto serialno = ossl::make<BIGNUM>();
+                if (BN_set_word(serialno.get(), serial) == 0)
                     CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
                         "Failed to convert BIGNUM serial number to OpenSSL ASN1_INTEGER."); // LCOV_EXCL_LINE
+
+                set_serialno(ctx, ossl::raii::roref<::BIGNUM>(serialno));
+            }
+
+            void set_serialno(context& ctx, ossl::raii::roref<::BIGNUM> serial)
+            {
+                owned<::ASN1_INTEGER> i = make<asn1::INTEGER>();
+                if (BN_to_ASN1_INTEGER(serial.get(), i.get()) == 0)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR( // LCOV_EXCL_LINE
+                        "Failed to convert BIGNUM serial number to OpenSSL ASN1_INTEGER."); // LCOV_EXCL_LINE
+
+                X509_set_serialNumber(ctx.get(), i.get());
             }
 
             void set_random_serialno(context& ctx)
@@ -243,7 +293,7 @@ namespace x509 {
                 if (BN_rand(randomserial.get(), 64, 0, 0) == 0)
                     CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to generate a random serial number."); // LCOV_EXCL_LINE
 
-                set_serialno(ctx, randomserial);
+                set_serialno(ctx, ossl::raii::roref<::BIGNUM>(randomserial));
             }
 
             void set_public_key(context& ctx, ossl::evp_pkey::roref pubkey)

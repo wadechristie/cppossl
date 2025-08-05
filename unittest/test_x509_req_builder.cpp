@@ -33,8 +33,8 @@ struct x509_req_builder_test
 TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Sign", "[x509_req][builder]")
 {
     auto const subject = name("Signed");
-    auto req = x509_req::sign(
-        key, unittest::default_digest(), [&subject](x509_req::builder& builder) { builder.set_subject(subject); });
+    auto req = x509_req::builder::sign(
+        key, unittest::default_digest(), [&subject](x509_req::builder::context& ctx) { set_subject(ctx, subject); });
     REQUIRE(req);
     REQUIRE(x509_name::equal(subject, x509_req::get_subject(req)));
     REQUIRE(x509_req::check_key(req, key));
@@ -45,9 +45,9 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Key Usage", "[x
 
     SECTION("Critical")
     {
-        auto req = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Key Usage"))
-                .set_key_usage_ext("digitalSignature, keyAgreement", /*critical=*/true);
+        auto req = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Key Usage"));
+            set_key_usage(ctx, "digitalSignature, keyAgreement", /*critical=*/true);
         });
         REQUIRE(req);
 
@@ -58,8 +58,9 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Key Usage", "[x
 
     SECTION("Non-Critical")
     {
-        auto req = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Key Usage")).set_key_usage_ext("keyEncipherment, dataEncipherment");
+        auto req = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Key Usage"));
+            set_key_usage(ctx, "keyEncipherment, dataEncipherment");
         });
         REQUIRE(req);
 
@@ -70,11 +71,11 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Key Usage", "[x
 
     SECTION("Invalid Usage String")
     {
-        REQUIRE_THROWS_AS(x509_req::sign(key,
+        REQUIRE_THROWS_AS(x509_req::builder::sign(key,
                               unittest::default_digest(),
-                              [this](x509_req::builder& builder) {
-                                  builder.set_subject(name("Key Usage"))
-                                      .set_key_usage_ext("keyEncipherment, dataEncipherment, invalidUsage");
+                              [this](x509_req::builder::context& ctx) {
+                                  set_subject(ctx, name("Key Usage"));
+                                  set_key_usage(ctx, "keyEncipherment, dataEncipherment, invalidUsage");
                               }),
             openssl_error);
     }
@@ -85,8 +86,9 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Extended Key Us
 
     SECTION("Critical")
     {
-        auto req = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Extended Key Usage")).set_ext_key_usage_ext("serverAuth", /*critical=*/true);
+        auto req = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Extended Key Usage"));
+            set_ext_key_usage(ctx, "serverAuth", /*critical=*/true);
         });
         REQUIRE(req);
 
@@ -97,8 +99,9 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Extended Key Us
 
     SECTION("Non-Critical")
     {
-        auto req = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Extended Key Usage")).set_ext_key_usage_ext("codeSigning, timeStamping");
+        auto req = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Extended Key Usage"));
+            set_ext_key_usage(ctx, "codeSigning, timeStamping");
         });
         REQUIRE(req);
 
@@ -109,12 +112,12 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Request Builder - Extended Key Us
 
     SECTION("Invalid Usage String")
     {
-        REQUIRE_THROWS_AS(
-            x509_req::sign(key,
-                unittest::default_digest(),
-                [this](x509_req::builder& builder) {
-                    builder.set_subject(name("Extended Key Usage")).set_ext_key_usage_ext("serverAuth, invalidUsage");
-                }),
+        REQUIRE_THROWS_AS(x509_req::builder::sign(key,
+                              unittest::default_digest(),
+                              [this](x509_req::builder::context& ctx) {
+                                  set_subject(ctx, name("Extended Key Usage"));
+                                  set_ext_key_usage(ctx, "serverAuth, invalidUsage");
+                              }),
             openssl_error);
     }
 }
@@ -124,10 +127,11 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Builder - Subject Alternative Nam
 
     SECTION("DNS Name")
     {
-        auto cert = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Subject Alt Name"))
-                .set_subject_alt_names_ext({
-                    general_name::make_dns("example.com"),
+        auto cert = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::dns("example.com"),
                 });
         });
         REQUIRE(cert);
@@ -139,13 +143,14 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Builder - Subject Alternative Nam
 
     SECTION("IP Address Name")
     {
-        auto cert = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Subject Alt Name"))
-                .set_subject_alt_names_ext({
-                    general_name::make_ip("10.0.0.1"),
-                    general_name::make_ip((in_addr) { .s_addr = htonl(INADDR_LOOPBACK) }),
-                    general_name::make_ip("::ffff:10.0.0.1"),
-                    general_name::make_ip(in6addr_loopback),
+        auto cert = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::ip("10.0.0.1"),
+                    x509::saltname::ip((in_addr) { .s_addr = htonl(INADDR_LOOPBACK) }),
+                    x509::saltname::ip("::ffff:10.0.0.1"),
+                    x509::saltname::ip(in6addr_loopback),
                 });
         });
         REQUIRE(cert);
@@ -160,10 +165,11 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Builder - Subject Alternative Nam
 
     SECTION("Email Address Name")
     {
-        auto cert = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("Subject Alt Name"))
-                .set_subject_alt_names_ext({
-                    general_name::make_email("email@example.com"),
+        auto cert = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("Subject Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::email("email@example.com"),
                 });
         });
         REQUIRE(cert);
@@ -175,10 +181,11 @@ TEST_CASE_METHOD(x509_req_builder_test, "X.509 Builder - Subject Alternative Nam
 
     SECTION("UPN")
     {
-        auto cert = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-            builder.set_subject(name("UPN Alt Name"))
-                .set_subject_alt_names_ext({
-                    general_name::make_upn("user@domain"),
+        auto cert = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+            set_subject(ctx, name("UPN Alt Name"));
+            set_subject_alt_names(ctx,
+                {
+                    x509::saltname::upn("user@domain"),
                 });
         });
         REQUIRE(cert);

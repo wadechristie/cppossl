@@ -20,80 +20,69 @@
 
 namespace ossl {
 namespace x509_crl {
+    namespace builder {
 
-    /**
-     * \defgroup x509_crl OpenSSL X509_CRL
-     */
-    /**@{*/
-
-    /**
-     * @brief X509_CRL object builder.
-     */
-    class builder
-    {
-    public:
         /**
-         * @brief Construct a builder ready for building
-         *
-         * @throws ossl::openssl_error
+         * \defgroup x509_crl OpenSSL X509_CRL
          */
-        inline builder()
+        /**@{*/
+
+        /**
+         * @brief X509_CRL object builder context.
+         */
+        class context
         {
-            reset();
-        }
+        public:
+            context(context&&) = delete;
+            context& operator=(context&&) = delete;
 
-        builder(builder&&) noexcept = default;
-        builder& operator=(builder&&) noexcept = default;
+            context(context const&) = delete;
+            context& operator=(context const&) = delete;
 
-        builder(builder const&) noexcept = delete;
-        builder& operator=(builder const&) noexcept = delete;
+            ~context() = default;
 
-        ~builder() noexcept = default;
+            inline ::X509_CRL* get() const
+            {
+                return _crl.get();
+            }
 
-        builder& set_lastupdate(asn1::time::roref lastupdate);
+        private:
+            inline context(owned<::X509_CRL>& crl)
+                : _crl(crl)
+            {
+            }
 
-        builder& set_nextupdate(asn1::time::roref nextupdate);
+            x509_crl::rwref _crl;
 
-        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time);
-        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time, int reason);
-        builder& add(ossl::x509::roref cert, asn1::time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason);
+            friend ossl::owned<::X509_CRL> sign(ossl::x509::roref cert,
+                ossl::evp_pkey::roref key,
+                ::EVP_MD const* digest,
+                std::function<void(context&)> func);
+        };
 
         /**
          * @brief Sign the current certificate revocation list context.
          *
          * @throws certify::openssl_error
          */
-        ossl::owned<::X509_CRL> sign(ossl::x509::roref cert, ossl::evp_pkey::roref key, ::EVP_MD const* digest);
+        ossl::owned<::X509_CRL> sign(ossl::x509::roref cert,
+            ossl::evp_pkey::roref key,
+            ::EVP_MD const* digest,
+            std::function<void(context&)> func);
 
-        /**
-         * @brief Reset the builder back to initial state ready for building.
-         *
-         * @throws ossl::openssl_error
-         */
-        void reset();
+        void set_lastupdate(context& ctx, asn1::time::roref lastupdate);
 
-    private:
-        /**
-         * @brief Set X.509 CRL issuer field.
-         *
-         * @throws certify::openssl_error
-         */
-        void set_issuer(x509_name::roref name);
+        void set_nextupdate(context& ctx, asn1::time::roref nextupdate);
 
-        ossl::owned<::X509_CRL> _crl;
-    };
+        void add(context& ctx, ossl::x509::roref cert, asn1::time::roref revocation_time);
+        void add(context& ctx, ossl::x509::roref cert, asn1::time::roref revocation_time, int reason);
+        void add(context& ctx,
+            ossl::x509::roref cert,
+            asn1::time::roref revocation_time,
+            raii::roref<::ASN1_ENUMERATED> reason);
 
-    inline owned<::X509_CRL> sign(ossl::x509::roref signing_cert,
-        ossl::evp_pkey::roref signing_key,
-        ::EVP_MD const* digest,
-        std::function<void(builder&)> callback)
-    {
-        builder b;
-        callback(b);
-        return b.sign(signing_cert, signing_key, digest);
-    }
+        /**@}*/
 
-    /**@}*/
-
+    } // namespace builder
 } // namespace x509_crl
 } // namespace ossl

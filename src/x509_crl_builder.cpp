@@ -8,92 +8,91 @@
 
 namespace ossl {
 namespace x509_crl {
+    namespace builder {
 
-    namespace _ {
+        namespace _ {
 
-        void set_lastupdate(rwref crl, asn1::time::roref lastupdate)
+            void set_lastupdate(rwref crl, asn1::time::roref lastupdate)
+            {
+                if (!X509_CRL_set1_lastUpdate(crl.get(), lastupdate.get()))
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL last update property."); // LCOV_EXCL_LINE
+            }
+
+            void set_issuer(rwref crl, x509_name::roref name)
+            {
+                if (X509_CRL_set_issuer_name(crl.get(), name.get()) == 0)
+                    CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL issuer."); // LCOV_EXCL_LINE
+            }
+
+        } // namespace _
+
+        void set_lastupdate(context& ctx, asn1::time::roref lastupdate)
         {
-            if (!X509_CRL_set1_lastUpdate(crl.get(), lastupdate.get()))
-                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL last update property."); // LCOV_EXCL_LINE
+            _::set_lastupdate(ctx.get(), lastupdate);
         }
 
-    } // namespace _
+        void set_nextupdate(context& ctx, asn1::time::roref nextupdate)
+        {
+            if (!X509_CRL_set1_nextUpdate(ctx.get(), nextupdate.get()))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL next update property."); // LCOV_EXCL_LINE
+        }
 
-    void builder::reset()
-    {
-        auto crl = make<::X509_CRL>();
-        X509_CRL_set_version(_crl.get(), X509_CRL_VERSION_2);
-        _::set_lastupdate(crl, asn1::time::now());
-        _crl = std::move(crl);
-    }
+        void add(context& ctx, ossl::x509::roref cert, asn1::time::roref revocation_time)
+        {
+            add(ctx, cert, revocation_time, static_cast<uint8_t>(OCSP_REVOKED_STATUS_UNSPECIFIED));
+        }
 
-    builder& builder::set_lastupdate(asn1::time::roref lastupdate)
-    {
-        _::set_lastupdate(_crl, lastupdate);
-        return *this;
-    }
+        void add(context& ctx, ossl::x509::roref cert, asn1::time::roref revocation_time, int reason)
+        {
+            auto tmp = make<asn1::ENUMERATED>();
+            if (tmp == nullptr || !ASN1_ENUMERATED_set(tmp.get(), reason))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to created CRL revocation reason object."); // LCOV_EXCL_LINE
+            add(ctx, cert, revocation_time, tmp.get());
+        }
 
-    builder& builder::set_nextupdate(asn1::time::roref nextupdate)
-    {
-        if (!X509_CRL_set1_nextUpdate(_crl.get(), nextupdate.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL next update property."); // LCOV_EXCL_LINE
+        void add(context& ctx,
+            ossl::x509::roref cert,
+            asn1::time::roref revocation_time,
+            raii::roref<::ASN1_ENUMERATED> reason)
+        {
+            auto revoked = ossl::make<::X509_REVOKED>();
 
-        return *this;
-    }
+            if (!X509_REVOKED_set_serialNumber(revoked.get(), X509_get_serialNumber(const_cast<::X509*>(cert.get()))))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED serial number."); // LCOV_EXCL_LINE
 
-    builder& builder::add(ossl::x509::roref cert, asn1::time::roref revocation_time)
-    {
-        return add(cert, revocation_time, static_cast<uint8_t>(OCSP_REVOKED_STATUS_UNSPECIFIED));
-    }
+            if (!X509_REVOKED_set_revocationDate(revoked.get(), const_cast<::ASN1_TIME*>(revocation_time.get())))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED revocation date."); // LCOV_EXCL_LINE
 
-    builder& builder::add(ossl::x509::roref cert, asn1::time::roref revocation_time, int reason)
-    {
-        auto tmp = make<asn1::ENUMERATED>();
-        if (tmp == nullptr || !ASN1_ENUMERATED_set(tmp.get(), reason))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to created CRL revocation reason object."); // LCOV_EXCL_LINE
-        return add(cert, revocation_time, tmp.get());
-    }
+            if (X509_REVOKED_add1_ext_i2d(
+                    revoked.get(), NID_crl_reason, const_cast<::ASN1_ENUMERATED*>(reason.get()), 0, 0)
+                <= 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED reason."); // LCOV_EXCL_LINE
 
-    builder& builder::add(
-        ossl::x509::roref cert, asn1::time::roref revocation_time, raii::roref<::ASN1_ENUMERATED> reason)
-    {
-        auto revoked = ossl::make<::X509_REVOKED>();
+            if (!X509_CRL_add0_revoked(ctx.get(), revoked.get()))
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set revoked X.509 to X.509 CRL."); // LCOV_EXCL_LINE
 
-        if (!X509_REVOKED_set_serialNumber(revoked.get(), X509_get_serialNumber(const_cast<::X509*>(cert.get()))))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED serial number."); // LCOV_EXCL_LINE
+            revoked.release();
+        }
 
-        if (!X509_REVOKED_set_revocationDate(revoked.get(), const_cast<::ASN1_TIME*>(revocation_time.get())))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED revocation date."); // LCOV_EXCL_LINE
+        ossl::owned<::X509_CRL> sign(
+            ossl::x509::roref cert, ossl::evp_pkey::roref key, EVP_MD const* digest, std::function<void(context&)> func)
+        {
+            CPPOSSL_ASSERT(digest != nullptr);
 
-        if (X509_REVOKED_add1_ext_i2d(revoked.get(), NID_crl_reason, const_cast<::ASN1_ENUMERATED*>(reason.get()), 0, 0)
-            <= 0)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X509_REVOKED reason."); // LCOV_EXCL_LINE
+            owned<::X509_CRL> crl = make<X509_CRL>();
+            context ctx(crl);
 
-        if (!X509_CRL_add0_revoked(_crl.get(), revoked.get()))
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set revoked X.509 to X.509 CRL."); // LCOV_EXCL_LINE
+            func(ctx);
 
-        revoked.release();
-        return *this;
-    }
+            X509_CRL_sort(crl.get());
 
-    void builder::set_issuer(x509_name::roref name)
-    {
-        if (X509_CRL_set_issuer_name(_crl.get(), name.get()) == 0)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to set X.509 CRL issuer."); // LCOV_EXCL_LINE
-    }
+            _::set_issuer(crl, X509_get_subject_name(cert.get()));
+            if (X509_CRL_sign(crl.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
+                CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 CRL."); // LCOV_EXCL_LINE
 
-    ossl::owned<::X509_CRL> builder::sign(ossl::x509::roref cert, ossl::evp_pkey::roref key, EVP_MD const* digest)
-    {
-        CPPOSSL_ASSERT(digest != nullptr);
+            return crl;
+        }
 
-        X509_CRL_sort(_crl.get());
-
-        set_issuer(X509_get_subject_name(cert.get()));
-        if (X509_CRL_sign(_crl.get(), const_cast<::EVP_PKEY*>(key.get()), digest) <= 0)
-            CPPOSSL_THROW_LAST_OPENSSL_ERROR("Failed to sign X.509 CRL."); // LCOV_EXCL_LINE
-
-        return std::move(_crl);
-    }
-
+    } // namespace builder
 } // namespace x509_crl
 } // namespace ossl

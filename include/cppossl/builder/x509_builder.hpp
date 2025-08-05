@@ -100,6 +100,8 @@ namespace x509 {
                 copy_extensions() = default;
             };
 
+            void set_serialno(context& ctx, uint64_t serial);
+
             /**
              * @brief Set X.509 serial number
              *
@@ -227,9 +229,9 @@ namespace x509 {
              *
              * @throws ossl::openssl_error
              */
-            inline void set_crl_distribution_point(context& ctx, raii::roref<STACK_OF(DIST_POINT)> crldists)
+            inline void set_crl_distribution_point(context& ctx, raii::roref<STACK_OF(DIST_POINT)> crl_dist_points)
             {
-                auto ext = x509_extension::make_crl_distribution_point(crldists);
+                auto ext = x509_extension::make_crl_distribution_point(crl_dist_points);
                 add_extension(ctx, std::move(ext));
             }
 

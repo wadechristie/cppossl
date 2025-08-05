@@ -328,10 +328,12 @@ TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - Subject Alternative Names",
 TEST_CASE_METHOD(x509_builder_test, "X.509 Builder - From Request", "[x509][builder]")
 {
     auto const key = unittest::rsa_key_one.load();
-    auto const req = x509_req::sign(key, unittest::default_digest(), [this](x509_req::builder& builder) {
-        builder.set_subject(name("Cert Request"))
-            .set_key_usage_ext("digitalSignature, keyEncipherment, keyAgreement", /*critical=*/true)
-            .set_ext_key_usage_ext("serverAuth", /*critical=*/true);
+    auto const req = x509_req::builder::sign(key, unittest::default_digest(), [this](x509_req::builder::context& ctx) {
+        set_subject(ctx, name("Cert Request"));
+        set_key_usage(ctx,
+            "digitalSignature, keyEncipherment, keyAgreement",
+            /*critical=*/true);
+        set_ext_key_usage(ctx, "serverAuth", /*critical=*/true);
     });
     REQUIRE(req);
 
