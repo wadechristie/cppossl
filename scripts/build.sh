@@ -11,14 +11,15 @@ function show_usage()
     echo "  build.sh [OPTIONS]"
     echo ""
     echo "  Options:"
-    echo "    --help        Show this help."
-    echo "    --clean       Cleanup the build directory and rebuild everything from scratch."
-    echo "    --asan        Building w/ ASAN."
-    echo "    --clang       Build w/ Clang."
-    echo "    --docs        Build doxygen documentation."
-    echo "    --release     Configure for release."
-    echo "    --builddir    Build directory path."
-    echo "    --configure   Only perform cmake configuration."
+    echo "    --help            Show this help."
+    echo "    --clean           Cleanup the build directory and rebuild everything from scratch."
+    echo "    --deep-clean      Reconfigure and build everything from scratch."
+    echo "    --asan            Building w/ ASAN."
+    echo "    --clang           Build w/ Clang."
+    echo "    --docs            Build doxygen documentation."
+    echo "    --release         Configure for release."
+    echo "    --builddir        Build directory path."
+    echo "    --configure       Only perform cmake configuration."
 }
 
 EXTRA_PARAMS=()
@@ -165,7 +166,7 @@ then
     then
         cmake --build . --target clean || die 'Clean Error!'
     fi
-    cmake --build . || die 'Build Error!'
+    cmake --build . -- -j$(nproc) || die 'Build Error!'
     if [[ 'yes' == "${WITH_DOCS}" ]]
     then
         cmake --build . --target docs || die 'Build Docs Error!'

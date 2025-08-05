@@ -13,6 +13,7 @@ function show_usage()
     echo "  Options:"
     echo "    --clean       Cleanup the build directory and rebuild everything from scratch."
     echo "    --gdb         Run tests under gdb debugger."
+    echo "    --valgrind    Execute tests under valgrind."
     echo "    --help        Show this help."
 }
 
