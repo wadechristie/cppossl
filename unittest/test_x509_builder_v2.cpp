@@ -377,7 +377,7 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
     });
     REQUIRE(req);
 
-    SECTION("From Request No Copy")
+    SECTION("Extensions - No Copy")
     {
         auto cert = x509::v2::builder::selfsign(
             req, key, unittest::default_digest(), [](x509::v2::builder::context& ctx, x509_req::roref req) -> void { });
@@ -392,7 +392,7 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
         REQUIRE_THAT(cert_text, !ContainsSubstring("TLS Web Server Authentication\n"));
     }
 
-    SECTION("From Request Copy All")
+    SECTION("Extensions - Copy All")
     {
         auto const signing_key = unittest::rsa_key_one.load();
         auto signing_cert = x509::v2::builder::selfsign(signing_key,
@@ -418,7 +418,7 @@ TEST_CASE("X.509 Builder v2 - From Request", "[x509][builder]")
         REQUIRE_THAT(cert_text, ContainsSubstring("TLS Web Server Authentication\n"));
     }
 
-    SECTION("From Request Copy Some")
+    SECTION("Extensions - Copy Some")
     {
         auto const signing_key = unittest::rsa_key_one.load();
         auto signing_cert = x509::v2::builder::selfsign(signing_key,
